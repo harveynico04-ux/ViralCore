@@ -72,6 +72,23 @@ def eliminar_patogeno(id_patogeno):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 400
 
+# 5. Editar un patógeno existente (Solo Admin)
+@app.route('/api/patogenos/<id_patogeno>', methods=['PUT'])
+def editar_patogeno(id_patogeno):
+    try:
+        datos = request.json
+        datos.pop('_id', None)  # Nunca actualizamos el _id
+        resultado = coleccion_patogenos.update_one(
+            {"_id": ObjectId(id_patogeno)},
+            {"$set": datos}
+        )
+        if resultado.matched_count == 1:
+            return jsonify({"success": True}), 200
+        else:
+            return jsonify({"success": False, "message": "No encontrado"}), 404
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 400
+
 
 # Punto de inicio
 if __name__ == '__main__':

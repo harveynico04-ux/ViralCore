@@ -3,216 +3,319 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ViralCore - Control de Infecciones</title>
+    <meta name="description" content="ViralCore - Control de Infecciones para profesionales de la salud">
+    <title>ViralCore</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header class="app-header">
-        <div class="header-content">
-            <h1 onclick="goTo('landing')" style="cursor:pointer">ViralCore</h1>
-            <p id="header-subtitle">Control de Infecciones</p>
+
+<!-- ═══ APP BAR ═══ -->
+<header class="app-bar">
+    <button class="app-bar-btn hidden" id="btn-back" onclick="handleBack()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    </button>
+    <span class="app-bar-title" id="app-bar-title">ViralCore</span>
+    <div class="app-bar-right" id="app-bar-right"></div>
+</header>
+
+<main class="app-main">
+
+    <!-- ══════════════════════════════════════
+         LANDING - Selección de Perfil
+    ══════════════════════════════════════ -->
+    <section id="view-landing" class="view active">
+        <div class="landing-hero">
+            <div class="hero-blob hero-blob-1"></div>
+            <div class="hero-blob hero-blob-2"></div>
+            <div class="hero-content">
+                <div class="hero-icon-wrap">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <h1 class="hero-title">ViralCore</h1>
+                <p class="hero-sub">Control de Infecciones</p>
+            </div>
         </div>
-    </header>
 
-    <main class="app-main">
-        <!-- VISTA: LANDING (Selección de Perfil) -->
-        <section id="view-landing" class="view-section active">
-            <div class="landing-container">
-                <h2>¿Quién eres?</h2>
-                <p class="landing-desc">Selecciona tu perfil para acceder a la información correspondiente.</p>
-                
-                <div class="profile-grid">
-                    <button class="profile-card" onclick="goTo('medical')">
-                        <div class="profile-icon">👨‍⚕️</div>
-                        <h3>Profesional Médico</h3>
-                        <p>Fichas técnicas, EPP y protocolos de aislamiento.</p>
-                    </button>
+        <div class="landing-body">
+            <p class="landing-label">Seleccioná tu perfil</p>
 
-                    <button class="profile-card family" onclick="goTo('family')">
-                        <div class="profile-icon">👨‍👩‍👧</div>
-                        <h3>Familia y Visitas</h3>
-                        <p>Guía de cuidados e instrucciones para cuidadores.</p>
-                    </button>
+            <button class="profile-btn" onclick="goTo('medical')">
+                <div class="profile-btn-icon med-bg">🩺</div>
+                <div class="profile-btn-text">
+                    <h3>Profesional Médico</h3>
+                    <p>Fichas técnicas, EPP y protocolos de aislamiento</p>
                 </div>
+                <svg class="chevron-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
 
-                <button class="btn-text-only" onclick="openAdminLogin()">Acceso Administrador</button>
-            </div>
-        </section>
-
-        <!-- VISTA: MEDICAL (Buscador y Fichas Técnicas) -->
-        <section id="view-medical" class="view-section hidden">
-            <button class="btn-back" onclick="goTo('landing')">← Volver al inicio</button>
-            
-            <div id="medical-search-area">
-                <div class="search-container">
-                    <div class="search-input-wrapper">
-                        <input type="text" id="search-input-med" placeholder="Buscar patógeno..." autocomplete="off">
-                    </div>
+            <button class="profile-btn fam-btn" onclick="goTo('family')">
+                <div class="profile-btn-icon fam-bg">🏠</div>
+                <div class="profile-btn-text">
+                    <h3>Familia y Visitas</h3>
+                    <p>Guía de cuidados para el entorno del paciente</p>
                 </div>
+                <svg class="chevron-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
 
-                <div class="results-container">
-                    <div class="table-wrapper">
-                        <table id="results-table-med">
-                            <thead>
-                                <tr>
-                                    <th>Patógeno</th>
-                                    <th>Aislamiento</th>
-                                </tr>
-                            </thead>
-                            <tbody id="results-body-med"></tbody>
-                        </table>
-                    </div>
-                    <div id="loading-state-med" class="empty-state hidden"><p>Cargando datos...</p></div>
+            <button class="admin-link-btn" onclick="openAdminLogin()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
+                Acceso Administrador
+            </button>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+         MÉDICO - Búsqueda y Ficha Técnica
+    ══════════════════════════════════════ -->
+    <section id="view-medical" class="view hidden">
+
+        <!-- Estado: Buscador -->
+        <div id="med-search-state">
+            <div class="search-wrap">
+                <div class="search-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input id="search-med" type="text" placeholder="Buscar patógeno..." autocomplete="off">
+                    <button class="clear-btn hidden" id="clear-med" onclick="clearSearch('med')">✕</button>
                 </div>
             </div>
+            <div id="med-hint" class="hint-state">
+                <div class="hint-icon">🔬</div>
+                <p>Escribí el nombre del patógeno para buscar</p>
+            </div>
+            <div id="med-results" class="results-list hidden"></div>
+            <div id="med-empty" class="empty-state hidden">
+                <p>Sin resultados para esa búsqueda</p>
+            </div>
+        </div>
 
-            <!-- Ficha Técnica Médica -->
-            <div id="medical-detail-area" class="hidden">
-                <button class="btn-icon" onclick="closeMedicalDetail()">← Volver a la búsqueda</button>
-                <div class="card pathogen-card">
-                    <div class="card-header">
-                        <h2 id="d-med-name">Nombre</h2>
+        <!-- Estado: Ficha Técnica -->
+        <div id="med-detail-state" class="hidden">
+            <div class="detail-hero" id="med-hero">
+                <div class="hero-blob hero-blob-1"></div>
+
+                <div class="detail-hero-chip" id="med-hero-chip">Aislamiento</div>
+                <h2 class="detail-hero-name" id="med-hero-name">Patógeno</h2>
+                <p class="detail-hero-sub" id="med-hero-sub"></p>
+            </div>
+
+            <div class="detail-body">
+                <button class="warn-trigger" onclick="openCriticalModal()">
+                    <span class="warn-trigger-left">
+                        <span class="warn-emoji">⚠️</span>
+                        <span>Ver Advertencias de Aislamiento</span>
+                    </span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+
+                <div class="section-card">
+                    <div class="section-header">
+                        <h3>Equipo de Protección Personal</h3>
                     </div>
-                    <div class="card-body">
-                        <button id="btn-isolation-med" class="btn-isolation" onclick="openCriticalModal()">
-                            <span class="isolation-label">Tipo de Aislamiento:</span>
-                            <span id="d-med-iso" class="isolation-value">-</span>
-                        </button>
-                        <div class="info-grid">
-                            <div class="info-group">
-                                <h3>Equipos de Protección (EPP)</h3>
-                                <ul id="d-med-epp" class="epp-list"></ul>
-                            </div>
-                            <div class="info-group">
-                                <h3>Mecanismos de Transmisión</h3>
-                                <ul id="d-med-mec"></ul>
-                            </div>
+                    <div class="epp-grid" id="med-epp"></div>
+                </div>
+
+                <div class="section-card">
+                    <div class="section-header">
+                        <h3>Vías de Transmisión</h3>
+                    </div>
+                    <div class="mec-list" id="med-mec"></div>
+                </div>
+
+                <div class="two-col-cards">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h3>Disposición de la Sala</h3>
                         </div>
+                        <p class="info-text" id="med-sala"></p>
+                    </div>
+
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h3>Manejo de Residuos</h3>
+                        </div>
+                        <p class="info-text" id="med-residuos"></p>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- VISTA: FAMILY (Buscador simple y Cuidados Amigables) -->
-        <section id="view-family" class="view-section hidden">
-            <button class="btn-back" onclick="goTo('landing')">← Volver al inicio</button>
-            
-            <div class="family-intro">
+    <!-- ══════════════════════════════════════
+         FAMILIA - Portal Amigable
+    ══════════════════════════════════════ -->
+    <section id="view-family" class="view hidden">
+
+        <!-- Estado: Buscador -->
+        <div id="fam-search-state">
+            <div class="family-welcome">
                 <h2>Información para Familias</h2>
-                <p>Busque el diagnóstico de su familiar para conocer las medidas de cuidado.</p>
+                <p>Buscá el diagnóstico de tu familiar para entender los cuidados de forma clara.</p>
             </div>
-
-            <div id="family-search-area">
-                <div class="search-container">
-                    <div class="search-input-wrapper">
-                        <input type="text" id="search-input-fam" placeholder="Ej: Influenza, Varicela..." autocomplete="off">
-                    </div>
-                </div>
-                <div class="family-results-grid" id="results-grid-fam"></div>
-            </div>
-
-            <!-- Ficha Familia -->
-            <div id="family-detail-area" class="hidden">
-                <button class="btn-icon" onclick="closeFamilyDetail()">← Volver a la lista</button>
-                <div class="card family-card">
-                    <div id="f-card-header" class="family-card-header">
-                        <h2 id="d-fam-name">Nombre</h2>
-                        <span id="d-fam-badge" class="badge">Aislamiento</span>
-                    </div>
-                    <div class="card-body">
-                        <h3>¿Qué cuidados debo tener?</h3>
-                        <p id="d-fam-cuidados" class="cuidados-text"></p>
-                    </div>
+            <div class="search-wrap">
+                <div class="search-box green-focus">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input id="search-fam" type="text" placeholder="Ej: Influenza, Varicela..." autocomplete="off">
+                    <button class="clear-btn hidden" id="clear-fam" onclick="clearSearch('fam')">✕</button>
                 </div>
             </div>
-        </section>
+            <div id="fam-hint" class="hint-state"><p>Escribí el diagnóstico</p></div>
+            <div id="fam-results" class="results-list hidden"></div>
+            <div id="fam-empty" class="empty-state hidden"><p>Sin resultados</p></div>
+        </div>
 
-        <!-- VISTA: ADMIN (Dashboard) -->
-        <section id="view-admin" class="view-section hidden">
-            <button class="btn-back" onclick="goTo('landing')">← Salir del panel</button>
-            
-            <div class="admin-header">
-                <h2>Panel de Control</h2>
-                <button class="btn-primary" onclick="openAddModal()">+ Nuevo Patógeno</button>
-            </div>
+        <!-- Estado: Ficha Familiar -->
+        <div id="fam-detail-state" class="hidden">
+            <div class="detail-hero family-hero" id="fam-hero">
+                <div class="hero-blob hero-blob-1"></div>
 
-            <div class="table-wrapper admin-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Patógeno</th>
-                            <th>Aislamiento</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="results-body-admin"></tbody>
-                </table>
+                <div class="detail-hero-chip" id="fam-hero-chip">Tipo</div>
+                <h2 class="detail-hero-name" id="fam-hero-name">Patógeno</h2>
             </div>
-        </section>
-    </main>
+            <div class="detail-body">
+                <div class="family-care-card">
+                    <div class="family-care-top">
+                        <h3>¿Qué necesito saber?</h3>
+                    </div>
+                    <p class="family-care-text" id="fam-cuidados"></p>
+                </div>
+                <div class="family-tip-box">
+                    <p>Ante cualquier duda, consultá al equipo de enfermería o al médico de guardia.</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <!-- MODAL DE ADVERTENCIAS CRÍTICAS (MÉDICO) -->
-    <div id="modal-critical" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 style="color:#e53e3e">Advertencias Críticas</h3>
-                <button class="btn-close" onclick="closeCriticalModal()">✕</button>
+    <!-- ══════════════════════════════════════
+         ADMIN - Panel de Control
+    ══════════════════════════════════════ -->
+    <section id="view-admin" class="view hidden">
+        <div class="admin-toolbar">
+            <span class="admin-count" id="admin-count">0 patógenos</span>
+            <button class="btn-add" onclick="openFormModal(null)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Agregar
+            </button>
+        </div>
+        <div class="search-wrap">
+            <div class="search-box">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="search-admin" type="text" placeholder="Filtrar lista..." autocomplete="off">
             </div>
-            <div class="modal-body">
+        </div>
+        <div id="admin-list" class="admin-list"></div>
+    </section>
+
+</main>
+
+<!-- ══════════════════════════════════════
+     MODAL: Advertencias Críticas
+══════════════════════════════════════ -->
+<div id="modal-critical" class="sheet-overlay hidden" onclick="closeOnOverlay(event,'modal-critical')">
+    <div class="bottom-sheet slide-up">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header warn-sheet-header">
+            <span class="sheet-header-icon">⚠️</span>
+            <h3>Advertencias Críticas</h3>
+        </div>
+        <div class="sheet-body">
+            <div class="iso-desc-box" id="modal-desc-box">
                 <p id="modal-desc"></p>
-                <div class="critical-warnings">
-                    <ul id="modal-warnings"></ul>
+            </div>
+            <div id="modal-warnings" class="warning-cards-list"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL: Admin Login
+══════════════════════════════════════ -->
+<div id="modal-login" class="sheet-overlay hidden" onclick="closeOnOverlay(event,'modal-login')">
+    <div class="bottom-sheet slide-up login-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+            <h3>Acceso Administrador</h3>
+        </div>
+        <div class="sheet-body">
+            <p class="login-desc">Ingresá la clave para gestionar la base de datos.</p>
+            <input type="password" id="admin-pwd" class="pin-input" placeholder="••••••" maxlength="8" onkeydown="if(event.key==='Enter')loginAdmin()">
+            <p class="error-msg hidden" id="login-error">Clave incorrecta. Intentá de nuevo.</p>
+            <button class="btn-primary" onclick="loginAdmin()">Ingresar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     FORM SHEET: Agregar / Editar
+══════════════════════════════════════ -->
+<div id="modal-form" class="full-page-sheet hidden">
+    <div class="fps-bar">
+        <button class="fps-cancel" onclick="closeFormModal()">Cancelar</button>
+        <h3 class="fps-title" id="form-title">Nuevo Patógeno</h3>
+        <button class="fps-save" onclick="savePathogen()">Guardar</button>
+    </div>
+    <div class="fps-body">
+
+        <div class="form-group">
+            <div class="fg-label">INFORMACIÓN BÁSICA</div>
+            <div class="fg-card">
+                <div class="ff"><label>Nombre científico <span class="req">*</span></label><input type="text" id="f-nombre" placeholder="Ej: Virus Influenza A y B"></div>
+                <div class="ff"><label>Grupo</label><input type="text" id="f-grupo" placeholder="Virus, Bacteria, Hongo, Parásito..."></div>
+                <div class="ff last"><label>Subcategoría</label><input type="text" id="f-subcat" placeholder="Ej: Virus Respiratorio"></div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="fg-label">TIPO DE AISLAMIENTO</div>
+            <div class="fg-card">
+                <div class="iso-radio-group">
+                    <label class="iso-opt" id="iso-opt-contacto">
+                        <input type="radio" name="f-iso" value="Contacto|Amarillo" onchange="onIsoChange(this)">
+                        <span>Contacto</span>
+                    </label>
+                    <label class="iso-opt" id="iso-opt-aereo">
+                        <input type="radio" name="f-iso" value="Respiratorio (Aéreo)|Azul" onchange="onIsoChange(this)">
+                        <span>Aéreo</span>
+                    </label>
+                    <label class="iso-opt" id="iso-opt-gotas">
+                        <input type="radio" name="f-iso" value="Gotas de Pflugge|Verde" onchange="onIsoChange(this)">
+                        <span>Gotas</span>
+                    </label>
                 </div>
+                <div class="ff"><label>Descripción técnica</label><textarea id="f-iso-desc" rows="2" placeholder="Breve descripción técnica del aislamiento..."></textarea></div>
+                <div class="ff last"><label>Advertencias críticas <span class="hint-label">— una por línea</span></label><textarea id="f-advertencias" rows="4" placeholder="Habitación individual o cohorte.&#10;Uso de N95 obligatorio.&#10;Higiene de manos estricta."></textarea></div>
             </div>
         </div>
-    </div>
 
-    <!-- MODAL DE LOGIN ADMIN -->
-    <div id="modal-login" class="modal-overlay hidden">
-        <div class="modal-content login-content">
-            <div class="modal-header">
-                <h3>Acceso Administrador</h3>
-                <button class="btn-close" onclick="closeAdminLogin()">✕</button>
-            </div>
-            <div class="modal-body">
-                <p>Ingrese la clave de administrador para gestionar la base de datos.</p>
-                <input type="password" id="admin-password" placeholder="Clave (Ej: 6767)" class="form-input">
-                <p id="login-error" class="error-text hidden">Clave incorrecta.</p>
-                <button class="btn-primary full-width" onclick="loginAdmin()">Ingresar</button>
+        <div class="form-group">
+            <div class="fg-label">EQUIPOS DE PROTECCIÓN (EPP)</div>
+            <div class="fg-card">
+                <div id="epp-checklist" class="epp-checklist-grid"></div>
+                <div class="ff last" style="margin-top:0"><label>Otros EPP <span class="hint-label">— separados por coma</span></label><input type="text" id="f-epp-custom" placeholder="Ej: Escudo facial, Polainas"></div>
             </div>
         </div>
-    </div>
 
-    <!-- MODAL AGREGAR PATÓGENO -->
-    <div id="modal-add" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Agregar Patógeno</h3>
-                <button class="btn-close" onclick="closeAddModal()">✕</button>
-            </div>
-            <div class="modal-body form-body">
-                <label>Nombre Científico:</label>
-                <input type="text" id="add-nombre" class="form-input" placeholder="Ej: Covid-19">
-
-                <label>Tipo de Aislamiento:</label>
-                <select id="add-iso-tipo" class="form-input">
-                    <option value="Contacto|Amarillo">Contacto</option>
-                    <option value="Respiratorio (Aéreo)|Azul">Aéreo</option>
-                    <option value="Gotas de Pflugge|Verde">Gotas</option>
-                </select>
-
-                <label>EPP Requerido (separado por comas):</label>
-                <input type="text" id="add-epp" class="form-input" placeholder="Ej: Guantes, Barbijo">
-
-                <label>Cuidados para la familia:</label>
-                <textarea id="add-fam" class="form-input" rows="3" placeholder="Instrucciones simples para familiares..."></textarea>
-
-                <button class="btn-primary full-width" onclick="savePathogen()">Guardar en Base de Datos</button>
+        <div class="form-group">
+            <div class="fg-label">DATOS CLÍNICOS</div>
+            <div class="fg-card">
+                <div class="ff"><label>Mecanismos de infección <span class="hint-label">— uno por línea</span></label><textarea id="f-mec" rows="3" placeholder="Gotitas al toser o estornudar.&#10;Contacto directo con superficies."></textarea></div>
+                <div class="ff"><label>Mecanismos de resistencia <span class="hint-label">— uno por línea</span></label><textarea id="f-resistencia" rows="2" placeholder="Formador de esporas (resistente al alcohol)..."></textarea></div>
+                <div class="ff"><label>Disposición de la sala</label><textarea id="f-sala" rows="2" placeholder="Habitación individual con presión negativa..."></textarea></div>
+                <div class="ff last"><label>Manejo de residuos y ropa</label><textarea id="f-residuos" rows="2" placeholder="Bolsa roja para material con secreciones..."></textarea></div>
             </div>
         </div>
-    </div>
 
-    <script src="app.js"></script>
+        <div class="form-group">
+            <div class="fg-label">PORTAL FAMILIAS</div>
+            <div class="fg-card">
+                <div class="ff last"><label>Instrucciones para la familia <span class="hint-label">— lenguaje simple</span></label><textarea id="f-familia" rows="5" placeholder="Su familiar tiene una infección que se transmite por...&#10;Por favor, lávese bien las manos al salir..."></textarea></div>
+            </div>
+        </div>
+
+        <div style="height:2rem"></div>
+    </div>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
