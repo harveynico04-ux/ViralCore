@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ViralCore - Control de Infecciones</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-content">
+            <h1 onclick="goTo('landing')" style="cursor:pointer">ViralCore</h1>
+            <p id="header-subtitle">Control de Infecciones</p>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <!-- VISTA: LANDING (Selección de Perfil) -->
+        <section id="view-landing" class="view-section active">
+            <div class="landing-container">
+                <h2>¿Quién eres?</h2>
+                <p class="landing-desc">Selecciona tu perfil para acceder a la información correspondiente.</p>
+                
+                <div class="profile-grid">
+                    <button class="profile-card" onclick="goTo('medical')">
+                        <div class="profile-icon">👨‍⚕️</div>
+                        <h3>Profesional Médico</h3>
+                        <p>Fichas técnicas, EPP y protocolos de aislamiento.</p>
+                    </button>
+
+                    <button class="profile-card family" onclick="goTo('family')">
+                        <div class="profile-icon">👨‍👩‍👧</div>
+                        <h3>Familia y Visitas</h3>
+                        <p>Guía de cuidados e instrucciones para cuidadores.</p>
+                    </button>
+                </div>
+
+                <button class="btn-text-only" onclick="openAdminLogin()">Acceso Administrador</button>
+            </div>
+        </section>
+
+        <!-- VISTA: MEDICAL (Buscador y Fichas Técnicas) -->
+        <section id="view-medical" class="view-section hidden">
+            <button class="btn-back" onclick="goTo('landing')">← Volver al inicio</button>
+            
+            <div id="medical-search-area">
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <input type="text" id="search-input-med" placeholder="Buscar patógeno..." autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="results-container">
+                    <div class="table-wrapper">
+                        <table id="results-table-med">
+                            <thead>
+                                <tr>
+                                    <th>Patógeno</th>
+                                    <th>Aislamiento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="results-body-med"></tbody>
+                        </table>
+                    </div>
+                    <div id="loading-state-med" class="empty-state hidden"><p>Cargando datos...</p></div>
+                </div>
+            </div>
+
+            <!-- Ficha Técnica Médica -->
+            <div id="medical-detail-area" class="hidden">
+                <button class="btn-icon" onclick="closeMedicalDetail()">← Volver a la búsqueda</button>
+                <div class="card pathogen-card">
+                    <div class="card-header">
+                        <h2 id="d-med-name">Nombre</h2>
+                    </div>
+                    <div class="card-body">
+                        <button id="btn-isolation-med" class="btn-isolation" onclick="openCriticalModal()">
+                            <span class="isolation-label">Tipo de Aislamiento:</span>
+                            <span id="d-med-iso" class="isolation-value">-</span>
+                        </button>
+                        <div class="info-grid">
+                            <div class="info-group">
+                                <h3>Equipos de Protección (EPP)</h3>
+                                <ul id="d-med-epp" class="epp-list"></ul>
+                            </div>
+                            <div class="info-group">
+                                <h3>Mecanismos de Transmisión</h3>
+                                <ul id="d-med-mec"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA: FAMILY (Buscador simple y Cuidados Amigables) -->
+        <section id="view-family" class="view-section hidden">
+            <button class="btn-back" onclick="goTo('landing')">← Volver al inicio</button>
+            
+            <div class="family-intro">
+                <h2>Información para Familias</h2>
+                <p>Busque el diagnóstico de su familiar para conocer las medidas de cuidado.</p>
+            </div>
+
+            <div id="family-search-area">
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <input type="text" id="search-input-fam" placeholder="Ej: Influenza, Varicela..." autocomplete="off">
+                    </div>
+                </div>
+                <div class="family-results-grid" id="results-grid-fam"></div>
+            </div>
+
+            <!-- Ficha Familia -->
+            <div id="family-detail-area" class="hidden">
+                <button class="btn-icon" onclick="closeFamilyDetail()">← Volver a la lista</button>
+                <div class="card family-card">
+                    <div id="f-card-header" class="family-card-header">
+                        <h2 id="d-fam-name">Nombre</h2>
+                        <span id="d-fam-badge" class="badge">Aislamiento</span>
+                    </div>
+                    <div class="card-body">
+                        <h3>¿Qué cuidados debo tener?</h3>
+                        <p id="d-fam-cuidados" class="cuidados-text"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA: ADMIN (Dashboard) -->
+        <section id="view-admin" class="view-section hidden">
+            <button class="btn-back" onclick="goTo('landing')">← Salir del panel</button>
+            
+            <div class="admin-header">
+                <h2>Panel de Control</h2>
+                <button class="btn-primary" onclick="openAddModal()">+ Nuevo Patógeno</button>
+            </div>
+
+            <div class="table-wrapper admin-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Patógeno</th>
+                            <th>Aislamiento</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-body-admin"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL DE ADVERTENCIAS CRÍTICAS (MÉDICO) -->
+    <div id="modal-critical" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="color:#e53e3e">Advertencias Críticas</h3>
+                <button class="btn-close" onclick="closeCriticalModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-desc"></p>
+                <div class="critical-warnings">
+                    <ul id="modal-warnings"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE LOGIN ADMIN -->
+    <div id="modal-login" class="modal-overlay hidden">
+        <div class="modal-content login-content">
+            <div class="modal-header">
+                <h3>Acceso Administrador</h3>
+                <button class="btn-close" onclick="closeAdminLogin()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>Ingrese la clave de administrador para gestionar la base de datos.</p>
+                <input type="password" id="admin-password" placeholder="Clave (Ej: 6767)" class="form-input">
+                <p id="login-error" class="error-text hidden">Clave incorrecta.</p>
+                <button class="btn-primary full-width" onclick="loginAdmin()">Ingresar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL AGREGAR PATÓGENO -->
+    <div id="modal-add" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Agregar Patógeno</h3>
+                <button class="btn-close" onclick="closeAddModal()">✕</button>
+            </div>
+            <div class="modal-body form-body">
+                <label>Nombre Científico:</label>
+                <input type="text" id="add-nombre" class="form-input" placeholder="Ej: Covid-19">
+
+                <label>Tipo de Aislamiento:</label>
+                <select id="add-iso-tipo" class="form-input">
+                    <option value="Contacto|Amarillo">Contacto</option>
+                    <option value="Respiratorio (Aéreo)|Azul">Aéreo</option>
+                    <option value="Gotas de Pflugge|Verde">Gotas</option>
+                </select>
+
+                <label>EPP Requerido (separado por comas):</label>
+                <input type="text" id="add-epp" class="form-input" placeholder="Ej: Guantes, Barbijo">
+
+                <label>Cuidados para la familia:</label>
+                <textarea id="add-fam" class="form-input" rows="3" placeholder="Instrucciones simples para familiares..."></textarea>
+
+                <button class="btn-primary full-width" onclick="savePathogen()">Guardar en Base de Datos</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
