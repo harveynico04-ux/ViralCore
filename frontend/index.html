@@ -40,6 +40,7 @@
         <div class="landing-body">
             <p class="landing-label">Seleccioná tu perfil</p>
 
+            <!-- Botón 1: Profesional Médico -->
             <button class="profile-btn" onclick="goTo('medical')">
                 <div class="profile-btn-icon med-bg">🩺</div>
                 <div class="profile-btn-text">
@@ -49,6 +50,7 @@
                 <svg class="chevron-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
 
+            <!-- Botón 2: Familia y Visitas -->
             <button class="profile-btn fam-btn" onclick="goTo('family')">
                 <div class="profile-btn-icon fam-bg">🏠</div>
                 <div class="profile-btn-text">
@@ -58,6 +60,26 @@
                 <svg class="chevron-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
 
+            <!-- Botón 3: Asistente de Triaje -->
+            <button class="profile-btn triaje-btn" onclick="goTo('triaje')" style="border-color: rgba(91,79,245,.25);">
+                <div class="profile-btn-icon triaje-bg" style="background: var(--accent-bg);">📋</div>
+                <div class="profile-btn-text">
+                    <h3>¿Qué aislamiento necesita?</h3>
+                    <p>Asistente rápido de bioseguridad por síntomas</p>
+                </div>
+                <svg class="chevron-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--accent);"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+
+            <!-- Botón 4: Carteles para Imprimir -->
+            <button class="profile-btn cartel-btn" onclick="goTo('carteles')" style="border-color: rgba(245,158,11,.25);">
+                <div class="profile-btn-icon cartel-bg" style="background: var(--amber-bg);">🖨️</div>
+                <div class="profile-btn-text">
+                    <h3>Carteles para Imprimir</h3>
+                    <p>Generador instantáneo de cartelería de bioseguridad</p>
+                </div>
+                <svg class="chevron-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--amber);"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+ 
             <button class="admin-link-btn" onclick="openAdminLogin()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
                 Acceso Administrador
@@ -119,6 +141,16 @@
         <!-- Estado: Ficha Familiar -->
         <div id="fam-detail-state" class="hidden"></div>
     </section>
+
+    <!-- ══════════════════════════════════════
+         ASISTENTE DE TRIAJE (¿Qué aislamiento necesita?)
+    ══════════════════════════════════════ -->
+    <section id="view-triaje" class="view hidden"></section>
+
+    <!-- ══════════════════════════════════════
+         CARTELES PARA IMPRIMIR
+    ══════════════════════════════════════ -->
+    <section id="view-carteles" class="view hidden"></section>
 
     <!-- ══════════════════════════════════════
          ADMIN - Panel de Control

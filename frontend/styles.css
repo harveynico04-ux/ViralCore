@@ -948,3 +948,77 @@ p, .info-text, .family-care-text, .family-tip-box p,
     font-size: 0.85rem;
     font-weight: 500;
 }
+
+/* ════════════════════════════
+   ESTILOS Y ESTÍMULOS DE TRIAJE E IMPRESIÓN (Puntos 4, 6 y 7)
+ ════════════════════════════ */
+
+/* Tarjetas de Ficha Técnica Profesional con sutil elevación en hover (Estímulos) */
+.section-card {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, border-color 0.22s ease !important;
+}
+.section-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--sh-md);
+    border-color: var(--accent-light);
+}
+
+.prof-card-hero {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease !important;
+}
+.prof-card-hero:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--sh-md);
+}
+
+/* Efecto en el botón de advertencia */
+.warn-trigger {
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
+}
+.warn-trigger:hover {
+    transform: scale(1.01);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+}
+
+/* Estilos de Carteles de Impresión */
+.cartel-print-box {
+    margin: 1.5rem auto;
+    max-width: 480px;
+    background: var(--surface);
+    transition: transform 0.3s ease;
+}
+.cartel-print-box.verde {
+    border-color: var(--green) !important;
+    color: var(--green-dark);
+}
+.cartel-print-box.azul {
+    border-color: var(--blue) !important;
+    color: var(--blue-dark);
+}
+.cartel-print-box.amarillo {
+    border-color: var(--amber) !important;
+    color: var(--amber-dark);
+}
+
+/* Soporte para Impresión limpia del Cartel */
+@media print {
+    header.app-bar, main.app-main > section:not(#view-carteles), #view-carteles > div > div:not(#cartel-preview-area), #cartel-preview-area > div:first-child {
+        display: none !important;
+    }
+    body {
+        background: white !important;
+    }
+    .app-main {
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+    .cartel-print-box {
+        border: 12px solid !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 3rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
