@@ -135,6 +135,34 @@ function getEppIcon(epp) {
     return '🏥';
 }
 
+// ─── Supervivencia en Superficies (Fuentes: CDC, Lancet ID, OPS) ──────────
+const SURVIVAL_MAP = {
+    'staphylococcus aureus':    'Hasta 7 meses en superficies secas. MRSA puede sobrevivir hasta 9 meses en superficies hospitalarias. Sensible a hipoclorito de sodio al 0,5% y alcohol al 70%. (Fuente: Kramer A. et al., BMC Infect Dis 2006)',
+    'staphylococcus':           'Hasta 7 meses en superficies secas. Sensible a hipoclorito al 0,5% y alcohol al 70%. (Fuente: CDC, Kramer A. BMC Infect Dis 2006)',
+    'escherichia coli':         'De 1,5 horas a 16 meses en superficies inanimadas. E. coli productora de BLEE persiste por tiempo prolongado. Sensible a hipoclorito al 0,1% y alcohol al 70%. (Fuente: Kramer A. et al., BMC Infect Dis 2006)',
+    'klebsiella':               'Hasta 30 meses en condiciones favorables. Klebsiella pneumoniae KPC altamente resistente en el ambiente hospitalario. Sensible a hipoclorito al 0,5% y amonio cuaternario. (Fuente: CDC HAI, Kramer 2006)',
+    'pseudomonas aeruginosa':   'De 6 horas a 16 meses en superficies húmedas. Particular resistencia en entornos húmedos como piletas y mangos de canillas. Sensible a hipoclorito y ácido peracético. (Fuente: Kramer A. et al., BMC Infect Dis 2006)',
+    'acinetobacter':            'De 3 días a 5 meses en superficies secas. Una de las bacterias nosocomiales más resistentes al ambiente. Sensible a hipoclorito al 1%. (Fuente: Wendt C. et al., JCM 1997)',
+    'clostridium difficile':    'Las esporas pueden persistir en el ambiente por meses a años. Resistente al alcohol. Desinfección obligatoria con hipoclorito de sodio al 0,5–1%. (Fuente: CDC C. diff Infection, OPS 2019)',
+    'enterococcus':             'Hasta 4 meses en superficies secas. VRE (Enterococo Resistente a Vancomicina) puede persistir hasta 4 meses. Sensible a hipoclorito al 0,5%. (Fuente: Kramer A. et al., BMC Infect Dis 2006)',
+    'mycobacterium tuberculosis':'Puede sobrevivir de horas a días en superficies, y semanas en esputo desecado. El bacilo de Koch es resistente a desinfectantes comunes; requiere luz UV o calor húmedo para su inactivación. (Fuente: OPS/OMS Tuberculosis Guidelines, CDC 2022)',
+    'influenza':                'El virus de la influenza sobrevive hasta 24 horas en superficies duras. Se inactiva con alcohol al 70% y detergentes comunes. (Fuente: CDC Influenza Prevention, Bean B. et al. JID 1982)',
+    'sars-cov':                 'Coronavirus (incluido SARS-CoV-2) puede sobrevivir de horas a 3 días en superficies (acero inoxidable y plástico). Se inactiva con alcohol al 70% e hipoclorito al 0,1%. (Fuente: van Doremalen N. NEJM 2020)',
+    'coronavirus':              'Puede sobrevivir de horas a 3 días en superficies. Se inactiva con alcohol al 70% e hipoclorito al 0,1%. (Fuente: van Doremalen N. NEJM 2020)',
+    'candida':                  'Candida albicans sobrevive hasta 120 días en superficies de acrílico y cauchos. Candida auris puede persistir por semanas en el ambiente hospitalario y es resistente a desinfectantes comunes. (Fuente: CDC Candida auris 2023)',
+    'norovirus':                'Puede sobrevivir semanas en superficies y días en el agua. Resistente al alcohol. Desinfección con hipoclorito de sodio al 0,1–1%. (Fuente: CDC Norovirus)',
+    'hepatitis b':              'Puede sobrevivir fuera del organismo hasta 7 días en superficies secas. Se inactiva con hipoclorito al 0,5% y glutaraldehído. (Fuente: CDC HBV)',
+    'default':                  'La supervivencia varía según el microorganismo, la humedad y el tipo de superficie. En general, bacterias Gram-positivas persisten más tiempo que las Gram-negativas. Aplicar desinfección de superficies con hipoclorito de sodio al 0,5–1% o alcohol al 70% según el protocolo institucional. (Fuente: Kramer A. et al., BMC Infect Dis 2006; OPS Manual de Bioseguridad en el Laboratorio 2005)'
+};
+
+function getSurvivalTime(nombreCientifico = '') {
+    const n = nombreCientifico.toLowerCase();
+    for (const key of Object.keys(SURVIVAL_MAP)) {
+        if (key !== 'default' && n.includes(key)) return SURVIVAL_MAP[key];
+    }
+    return SURVIVAL_MAP['default'];
+}
+
 // ─── App Bar ──────────────────────────────────
 function setAppBar(title, showBack = false, rightHtml = '') {
     qs('#app-bar-title').textContent = title;
@@ -242,11 +270,9 @@ function renderMedResults(data) {
     show(list); hide(empty);
     list.innerHTML = data.map((item, i) => {
         const color = getColor(item.tipo_aislamiento?.color_cartel);
-        const abbr  = getIsoAbbr(item.tipo_aislamiento?.nombre);
         return `
         <div class="result-card" style="animation-delay:${i * 20}ms" onclick="openMedDetail('${item._id}')">
-            <div class="rc-icon ${color}">${abbr}</div>
-            <div class="rc-info">
+            <div class="rc-info" style="padding-left: 0.25rem;">
                 <div class="rc-name">${item.nombre_cientifico}</div>
                 <span class="badge-pill ${color}">${item.tipo_aislamiento?.nombre || 'Estándar'}</span>
             </div>
@@ -264,7 +290,31 @@ function openMedDetail(id) {
     const color = getColor(item.tipo_aislamiento?.color_cartel);
     const isoIcon = ISO_ICON[color] || '🏥';
 
-    // Renderizar Ficha Técnica del Profesional según Imagen 2
+    // Fallbacks normativos reales basados en CDC/OPS/ANMAT según tipo de aislamiento
+    const isoColor = color;
+    let residuosFallback = '';
+    let salaFallback = '';
+    let resistenciaFallback = '';
+
+    if (isoColor === 'amarillo') { // Contacto
+        residuosFallback = 'Clasificar como residuo patogénico (bolsa roja). Todo material que haya tenido contacto con el paciente (gasas, guantes, catéteres) debe desecharse en recipiente con tapa y bolsa roja. La ropa de cama debe manipularse con guantes, enrollarse sin sacudir y enviarse en bolsa impermeable. (Fuente: CDC Guideline for Isolation Precautions 2007, ANMAT Disposición 2318/02)';
+        salaFallback = 'Habitación individual preferentemente. Si no hay disponibilidad, cohorte con pacientes del mismo germen. Mantener la puerta cerrada. Uso exclusivo de estetoscopio, termómetro y esfigmomanómetro para el paciente. Desinfectar superficies con hipoclorito de sodio al 0,5% o clorhexidina al 2% entre pacientes. (Fuente: CDC 2007, OPS Manual de Bioseguridad 2005)';
+    } else if (isoColor === 'verde') { // Gotas
+        residuosFallback = 'Clasificar como residuo patogénico. Descarte de material respiratorio (pañuelos, máscaras descartables) en bolsa roja con tapa. La ropa de cama debe manejarse con precauciones estándar. (Fuente: CDC Guideline for Isolation Precautions 2007)';
+        salaFallback = 'Habitación individual o cohorte. Separación física de camas de al menos 1 metro. Puerta puede mantenerse abierta. Usar barbijo quirúrgico al ingresar y en todo contacto a menos de 1 metro. (Fuente: CDC 2007, OPS 2005)';
+    } else if (isoColor === 'azul') { // Aéreo
+        residuosFallback = 'Residuo infeccioso de alto riesgo. Bolsa roja doble sellada. El personal debe usar N95 al manipular residuos. Traslado en contenedor rígido etiquetado. (Fuente: CDC 2007, OPS Manual de Bioseguridad, ANMAT 2318/02)';
+        salaFallback = 'Habitación individual con presión negativa (6–12 renovaciones de aire/hora). Puerta permanentemente cerrada. Personal debe colocarse el N95 antes de ingresar al pasillo del cuarto. Traslado del paciente sólo si es imprescindible, con barbijo quirúrgico en el paciente. (Fuente: CDC 2007, ANMAT, Ministerio de Salud Argentina Res. 1342/2012)';
+    } else { // Estándar
+        residuosFallback = 'Residuos generales o patogénicos según tipo de material. Descarte según precauciones estándar. (Fuente: CDC 2007, ANMAT 2318/02)';
+        salaFallback = 'No se requiere aislamiento especial. Aplicar Precauciones Estándar: lavado de manos clínico antes y después de cada contacto. (Fuente: CDC 2007)';
+    }
+
+    const residuosText = item.manejo_residuos_ropa?.basura?.trim() || residuosFallback;
+    const salaText = item.disposicion_sala?.trim() || salaFallback;
+    const resistencia = (item.mecanismos_resistencia || []);
+    const supervivencia = getSurvivalTime(item.nombre_cientifico);
+
     const detailStateEl = qs('#med-detail-state');
     detailStateEl.innerHTML = `
         <div class="detail-header-professional">
@@ -278,7 +328,7 @@ function openMedDetail(id) {
                     <span class="prof-label">NOMBRE CIENTÍFICO</span>
                     <h2 class="prof-name">${item.nombre_cientifico}</h2>
                     <div class="prof-badges">
-                        <span class="prof-badge"><span class="badge-emoji">📁</span> ${item.clasificacion?.grupo_principal || 'Grupo'}</span>
+                        <span class="prof-badge">${item.clasificacion?.grupo_principal || 'Grupo'}</span>
                         ${item.clasificacion?.subcategoria ? `<span class="prof-badge">${item.clasificacion.subcategoria}</span>` : ''}
                     </div>
                 </div>
@@ -303,7 +353,6 @@ function openMedDetail(id) {
             <div class="prof-grid">
                 <div class="section-card">
                     <div class="section-header">
-                        <span class="header-icon">⚡</span>
                         <h3>MECANISMOS DE TRANSMISIÓN</h3>
                     </div>
                     <div class="mec-list">
@@ -312,13 +361,12 @@ function openMedDetail(id) {
                                 <span class="mec-dot-blue">•</span>
                                 <span>${m}</span>
                             </div>
-                        `).join('') || '<p class="info-text">Sin datos</p>'}
+                        `).join('') || '<p class="info-text">Sin datos registrados.</p>'}
                     </div>
                 </div>
 
                 <div class="section-card">
                     <div class="section-header">
-                        <span class="header-icon">🛡️</span>
                         <h3>EQUIPO DE PROTECCIÓN PERSONAL</h3>
                     </div>
                     <div class="epp-grid-new">
@@ -330,18 +378,38 @@ function openMedDetail(id) {
 
                 <div class="section-card">
                     <div class="section-header">
-                        <span class="header-icon">🗑️</span>
-                        <h3>MANEJO DE RESIDUOS</h3>
+                        <h3>MANEJO DE RESIDUOS Y ROPA</h3>
                     </div>
-                    <p class="info-text">${item.manejo_residuos_ropa?.basura || 'Sin especificaciones.'}</p>
+                    <p class="info-text">${residuosText}</p>
                 </div>
 
                 <div class="section-card">
                     <div class="section-header">
-                        <span class="header-icon">🏠</span>
                         <h3>DISPOSICIÓN DE LA SALA</h3>
                     </div>
-                    <p class="info-text">${item.disposicion_sala || 'Sin especificaciones.'}</p>
+                    <p class="info-text">${salaText}</p>
+                </div>
+
+                ${resistencia.length ? `
+                <div class="section-card">
+                    <div class="section-header">
+                        <h3>MECANISMOS DE RESISTENCIA</h3>
+                    </div>
+                    <div class="mec-list">
+                        ${resistencia.map(r => `
+                            <div class="mec-item-new">
+                                <span class="mec-dot-blue">•</span>
+                                <span>${r}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>` : ''}
+
+                <div class="section-card" style="grid-column: 1 / -1;">
+                    <div class="section-header">
+                        <h3>SUPERVIVENCIA EN SUPERFICIES</h3>
+                    </div>
+                    <p class="info-text">${supervivencia}</p>
                 </div>
             </div>
         </div>
@@ -401,11 +469,9 @@ function renderFamResults(data) {
     show(list); hide(empty);
     list.innerHTML = data.map((item, i) => {
         const color = getColor(item.tipo_aislamiento?.color_cartel);
-        const abbr  = getIsoAbbr(item.tipo_aislamiento?.nombre);
         return `
         <div class="result-card" style="animation-delay:${i * 20}ms" onclick="openFamDetail('${item._id}')">
-            <div class="rc-icon ${color}">${abbr}</div>
-            <div class="rc-info">
+            <div class="rc-info" style="padding-left: 0.25rem;">
                 <div class="rc-name">${item.nombre_cientifico}</div>
                 <span class="badge-pill ${color}">${item.tipo_aislamiento?.nombre || 'Estándar'}</span>
             </div>
