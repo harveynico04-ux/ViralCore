@@ -976,6 +976,17 @@ function procesarTriaje() {
         enfermeria = 'Separación física de camas si comparte sala. Descarte de material respiratorio en bolsa roja.';
     }
 
+    const renderSection = (titulo, items, acento, bgClaro) => `
+        <div class="section-card" style="padding:0; overflow:hidden; border-top: 3px solid ${acento};">
+            <div class="section-header" style="background:${bgClaro}; border-bottom:1px solid ${acento}22; margin:0; padding:0.875rem 1.25rem;">
+                <h3 style="color:${acento}; font-size:0.78rem; letter-spacing:0.06em; margin:0; padding:0;">${titulo}</h3>
+            </div>
+            <div class="mec-list" style="padding:0.875rem 1.25rem;">
+                <p class="info-text" style="margin:0;">${items}</p>
+            </div>
+        </div>
+    `;
+
     const resBox = qs('#triaje-resultado');
     show(resBox);
     resBox.innerHTML = `
@@ -987,21 +998,27 @@ function procesarTriaje() {
         </div>
 
         <div class="prof-grid">
-            <div class="section-card">
-                <div class="section-header"><h3>EQUIPO DE PROTECCIÓN PERSONAL REQUERIDO</h3></div>
-                <div class="epp-grid-new">
-                    ${epp.map(e => `<span class="epp-badge-gray">${e}</span>`).join('')}
+            <div class="section-card" style="padding:0; overflow:hidden; border-top:3px solid #10b981;">
+                <div class="section-header" style="background:#ecfdf5; border-bottom:1px solid #10b98122; margin:0; padding:0.875rem 1.25rem;">
+                    <h3 style="color:#059669; font-size:0.78rem; letter-spacing:0.06em; margin:0; padding:0;">EQUIPO DE PROTECCIÓN PERSONAL REQUERIDO</h3>
+                </div>
+                <div class="epp-grid-new" style="padding:1rem 1.25rem;">
+                    ${epp.map(e => `<span class="epp-badge-green">${e}</span>`).join('')}
                 </div>
             </div>
 
-            <div class="section-card">
-                <div class="section-header"><h3>CUIDADOS DE ENFERMERÍA</h3></div>
-                <p class="info-text">${enfermeria}</p>
-            </div>
+            ${renderSection(
+                'CUIDADOS DE ENFERMERÍA',
+                enfermeria,
+                '#3b82f6', '#eff6ff'
+            )}
 
-            <div class="section-card" style="grid-column: 1 / -1;">
-                <div class="section-header"><h3>RECOMENDACIONES PARA VISITAS Y FAMILIARES</h3></div>
-                <p class="info-text">${visitas}</p>
+            <div style="grid-column: 1 / -1;">
+                ${renderSection(
+                    'RECOMENDACIONES PARA VISITAS Y FAMILIARES',
+                    visitas,
+                    '#8b5cf6', '#f5f3ff'
+                )}
             </div>
         </div>
     `;
