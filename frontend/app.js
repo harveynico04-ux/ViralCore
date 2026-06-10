@@ -135,24 +135,85 @@ function getEppIcon(epp) {
     return '🏥';
 }
 
-// ─── Supervivencia en Superficies (Fuentes: CDC, Lancet ID, OPS) ──────────
+// ─── Supervivencia en Superficies (sin bibliografía, por items) ──────
 const SURVIVAL_MAP = {
-    'staphylococcus aureus':    'Hasta 7 meses en superficies secas. MRSA puede sobrevivir hasta 9 meses en superficies hospitalarias. Sensible a hipoclorito de sodio al 0,5% y alcohol al 70%. (Fuente: Kramer A. et al., BMC Infect Dis 2006)',
-    'staphylococcus':           'Hasta 7 meses en superficies secas. Sensible a hipoclorito al 0,5% y alcohol al 70%. (Fuente: CDC, Kramer A. BMC Infect Dis 2006)',
-    'escherichia coli':         'De 1,5 horas a 16 meses en superficies inanimadas. E. coli productora de BLEE persiste por tiempo prolongado. Sensible a hipoclorito al 0,1% y alcohol al 70%. (Fuente: Kramer A. et al., BMC Infect Dis 2006)',
-    'klebsiella':               'Hasta 30 meses en condiciones favorables. Klebsiella pneumoniae KPC altamente resistente en el ambiente hospitalario. Sensible a hipoclorito al 0,5% y amonio cuaternario. (Fuente: CDC HAI, Kramer 2006)',
-    'pseudomonas aeruginosa':   'De 6 horas a 16 meses en superficies húmedas. Particular resistencia en entornos húmedos como piletas y mangos de canillas. Sensible a hipoclorito y ácido peracético. (Fuente: Kramer A. et al., BMC Infect Dis 2006)',
-    'acinetobacter':            'De 3 días a 5 meses en superficies secas. Una de las bacterias nosocomiales más resistentes al ambiente. Sensible a hipoclorito al 1%. (Fuente: Wendt C. et al., JCM 1997)',
-    'clostridium difficile':    'Las esporas pueden persistir en el ambiente por meses a años. Resistente al alcohol. Desinfección obligatoria con hipoclorito de sodio al 0,5–1%. (Fuente: CDC C. diff Infection, OPS 2019)',
-    'enterococcus':             'Hasta 4 meses en superficies secas. VRE (Enterococo Resistente a Vancomicina) puede persistir hasta 4 meses. Sensible a hipoclorito al 0,5%. (Fuente: Kramer A. et al., BMC Infect Dis 2006)',
-    'mycobacterium tuberculosis':'Puede sobrevivir de horas a días en superficies, y semanas en esputo desecado. El bacilo de Koch es resistente a desinfectantes comunes; requiere luz UV o calor húmedo para su inactivación. (Fuente: OPS/OMS Tuberculosis Guidelines, CDC 2022)',
-    'influenza':                'El virus de la influenza sobrevive hasta 24 horas en superficies duras. Se inactiva con alcohol al 70% y detergentes comunes. (Fuente: CDC Influenza Prevention, Bean B. et al. JID 1982)',
-    'sars-cov':                 'Coronavirus (incluido SARS-CoV-2) puede sobrevivir de horas a 3 días en superficies (acero inoxidable y plástico). Se inactiva con alcohol al 70% e hipoclorito al 0,1%. (Fuente: van Doremalen N. NEJM 2020)',
-    'coronavirus':              'Puede sobrevivir de horas a 3 días en superficies. Se inactiva con alcohol al 70% e hipoclorito al 0,1%. (Fuente: van Doremalen N. NEJM 2020)',
-    'candida':                  'Candida albicans sobrevive hasta 120 días en superficies de acrílico y cauchos. Candida auris puede persistir por semanas en el ambiente hospitalario y es resistente a desinfectantes comunes. (Fuente: CDC Candida auris 2023)',
-    'norovirus':                'Puede sobrevivir semanas en superficies y días en el agua. Resistente al alcohol. Desinfección con hipoclorito de sodio al 0,1–1%. (Fuente: CDC Norovirus)',
-    'hepatitis b':              'Puede sobrevivir fuera del organismo hasta 7 días en superficies secas. Se inactiva con hipoclorito al 0,5% y glutaraldehído. (Fuente: CDC HBV)',
-    'default':                  'La supervivencia varía según el microorganismo, la humedad y el tipo de superficie. En general, bacterias Gram-positivas persisten más tiempo que las Gram-negativas. Aplicar desinfección de superficies con hipoclorito de sodio al 0,5–1% o alcohol al 70% según el protocolo institucional. (Fuente: Kramer A. et al., BMC Infect Dis 2006; OPS Manual de Bioseguridad en el Laboratorio 2005)'
+    'staphylococcus aureus': [
+        'Hasta 7 meses en superficies secas hospitalarias',
+        'MRSA puede sobrevivir hasta 9 meses en superficies',
+        'Inactivado por hipoclorito de sodio al 0,5% y alcohol al 70%'
+    ],
+    'staphylococcus': [
+        'Hasta 7 meses en superficies secas',
+        'Inactivado por hipoclorito al 0,5% y alcohol al 70%'
+    ],
+    'escherichia coli': [
+        'De 1,5 horas a 16 meses según condiciones',
+        'E. coli BLEE puede persistir por tiempo prolongado en el ambiente',
+        'Inactivado por hipoclorito al 0,1% y alcohol al 70%'
+    ],
+    'klebsiella': [
+        'Hasta 30 meses en condiciones favorables de temperatura',
+        'Klebsiella KPC tiene alta persistencia ambiental hospitalaria',
+        'Inactivado por hipoclorito al 0,5% y amonio cuaternario'
+    ],
+    'pseudomonas aeruginosa': [
+        'De 6 horas a 16 meses en superficies húmedas',
+        'Alta resistencia en entornos húmedos: piletas y canillas',
+        'Inactivado por hipoclorito y ácido peracético'
+    ],
+    'acinetobacter': [
+        'De 3 días a 5 meses en superficies secas',
+        'Una de las bacterias nosocomiales más resistentes al ambiente',
+        'Inactivado por hipoclorito al 1%'
+    ],
+    'clostridium difficile': [
+        'Las esporas pueden persistir meses a años en el ambiente',
+        'Resistente al alcohol: NO usar alcohol gel para desinfectar superficies',
+        'Desinfectar obligatoriamente con hipoclorito de sodio al 0,5–1%'
+    ],
+    'enterococcus': [
+        'Hasta 4 meses en superficies secas',
+        'VRE puede persistir hasta 4 meses en superficies hospitalarias',
+        'Inactivado por hipoclorito al 0,5%'
+    ],
+    'mycobacterium tuberculosis': [
+        'Horas a días en superficies; semanas en esputo desecado',
+        'Resistente a desinfectantes comunes de uso general',
+        'Inactivado por luz UV o calor húmedo (esterilización)'
+    ],
+    'influenza': [
+        'Hasta 24 horas en superficies duras',
+        'Minutos a horas en manos y tejidos',
+        'Inactivado por alcohol al 70% y detergentes comúnes'
+    ],
+    'sars-cov': [
+        'Horas a 3 días en superficies de acero y plástico',
+        'Inactivado por alcohol al 70% e hipoclorito al 0,1%'
+    ],
+    'coronavirus': [
+        'Horas a 3 días en superficies duras',
+        'Inactivado por alcohol al 70% e hipoclorito al 0,1%'
+    ],
+    'candida': [
+        'Candida albicans: hasta 120 días en superficies de acrílico',
+        'Candida auris: semanas en el ambiente, resistente a desinfectantes comunes',
+        'Requiere limpieza con desinfectantes específicos para hongos'
+    ],
+    'norovirus': [
+        'Semanas en superficies, días en agua',
+        'Resistente al alcohol gel',
+        'Desinfectar con hipoclorito de sodio al 0,1–1%'
+    ],
+    'hepatitis b': [
+        'Hasta 7 días fuera del organismo en superficies secas',
+        'Inactivado por hipoclorito al 0,5% y glutaraldehído'
+    ],
+    'default': [
+        'La supervivencia varía según microorganismo, humedad y tipo de superficie',
+        'Las bacterias Gram-positivas persisten más tiempo que las Gram-negativas',
+        'Desinfectar con hipoclorito de sodio al 0,5–1% o alcohol al 70%',
+        'Consultar el protocolo institucional de desinfección de superficies'
+    ]
 };
 
 function getSurvivalTime(nombreCientifico = '') {
@@ -290,30 +351,96 @@ function openMedDetail(id) {
     const color = getColor(item.tipo_aislamiento?.color_cartel);
     const isoIcon = ISO_ICON[color] || '🏥';
 
-    // Fallbacks normativos reales basados en CDC/OPS/ANMAT según tipo de aislamiento
-    const isoColor = color;
-    let residuosFallback = '';
-    let salaFallback = '';
-    let resistenciaFallback = '';
+    // Helper para renderizar una sección coloreada con items
+    const renderSection = (titulo, items, acento, bgClaro) => `
+        <div class="section-card" style="padding:0; overflow:hidden; border-top: 3px solid ${acento};">
+            <div class="section-header" style="background:${bgClaro}; border-bottom:1px solid ${acento}22; margin:0; padding:0.875rem 1.25rem;">
+                <h3 style="color:${acento}; font-size:0.78rem; letter-spacing:0.06em; margin:0; padding:0;">${titulo}</h3>
+            </div>
+            <div class="mec-list" style="padding:0.875rem 1.25rem;">
+                ${items.length ? items.map(i => `
+                    <div class="mec-item-new" style="gap:0.75rem; align-items:flex-start; padding:0.3rem 0;">
+                        <span style="color:${acento}; font-size:0.9rem; flex-shrink:0; line-height:1.6;">▸</span>
+                        <span style="color:var(--text-1); font-size:0.9rem; line-height:1.6;">${i}</span>
+                    </div>
+                `).join('') : '<p class="info-text">Sin datos registrados.</p>'}
+            </div>
+        </div>
+    `;
 
-    if (isoColor === 'amarillo') { // Contacto
-        residuosFallback = 'Clasificar como residuo patogénico (bolsa roja). Todo material que haya tenido contacto con el paciente (gasas, guantes, catéteres) debe desecharse en recipiente con tapa y bolsa roja. La ropa de cama debe manipularse con guantes, enrollarse sin sacudir y enviarse en bolsa impermeable. (Fuente: CDC Guideline for Isolation Precautions 2007, ANMAT Disposición 2318/02)';
-        salaFallback = 'Habitación individual preferentemente. Si no hay disponibilidad, cohorte con pacientes del mismo germen. Mantener la puerta cerrada. Uso exclusivo de estetoscopio, termómetro y esfigmomanómetro para el paciente. Desinfectar superficies con hipoclorito de sodio al 0,5% o clorhexidina al 2% entre pacientes. (Fuente: CDC 2007, OPS Manual de Bioseguridad 2005)';
-    } else if (isoColor === 'verde') { // Gotas
-        residuosFallback = 'Clasificar como residuo patogénico. Descarte de material respiratorio (pañuelos, máscaras descartables) en bolsa roja con tapa. La ropa de cama debe manejarse con precauciones estándar. (Fuente: CDC Guideline for Isolation Precautions 2007)';
-        salaFallback = 'Habitación individual o cohorte. Separación física de camas de al menos 1 metro. Puerta puede mantenerse abierta. Usar barbijo quirúrgico al ingresar y en todo contacto a menos de 1 metro. (Fuente: CDC 2007, OPS 2005)';
-    } else if (isoColor === 'azul') { // Aéreo
-        residuosFallback = 'Residuo infeccioso de alto riesgo. Bolsa roja doble sellada. El personal debe usar N95 al manipular residuos. Traslado en contenedor rígido etiquetado. (Fuente: CDC 2007, OPS Manual de Bioseguridad, ANMAT 2318/02)';
-        salaFallback = 'Habitación individual con presión negativa (6–12 renovaciones de aire/hora). Puerta permanentemente cerrada. Personal debe colocarse el N95 antes de ingresar al pasillo del cuarto. Traslado del paciente sólo si es imprescindible, con barbijo quirúrgico en el paciente. (Fuente: CDC 2007, ANMAT, Ministerio de Salud Argentina Res. 1342/2012)';
-    } else { // Estándar
-        residuosFallback = 'Residuos generales o patogénicos según tipo de material. Descarte según precauciones estándar. (Fuente: CDC 2007, ANMAT 2318/02)';
-        salaFallback = 'No se requiere aislamiento especial. Aplicar Precauciones Estándar: lavado de manos clínico antes y después de cada contacto. (Fuente: CDC 2007)';
+    // ─── Fallbacks como arrays, por tipo de aislamiento ───
+    const isoColor = color;
+    let residuosItems, salaItems;
+
+    if (isoColor === 'amarillo') {
+        residuosItems = [
+            'Clasificar como residuo patogénico en bolsa roja con tapa',
+            'Gasas, guantes y catéteres: desechar en recipiente con bolsa roja',
+            'Ropa de cama: manipular con guantes, enrollar sin sacudir y enviar en bolsa impermeable',
+            'Nunca mezclar con residuos domiciliarios',
+            'Desinfectar el recipiente externo con hipoclorito al 0,5% antes de retirarlo'
+        ];
+        salaItems = [
+            'Habitación individual preferentemente',
+            'Si no hay disponibilidad: cohorte con pacientes del mismo germen confirmado',
+            'Mantener la puerta cerrada en todo momento',
+            'Uso exclusivo de estetoscopio, termómetro y esfigmomanómetro para el paciente',
+            'Desinfectar superficies con hipoclorito de sodio al 0,5% o clorhexidina al 2%',
+            'El EPP debe descartarse dentro de la habitación antes de salir'
+        ];
+    } else if (isoColor === 'verde') {
+        residuosItems = [
+            'Clasificar como residuo patogénico en bolsa roja con tapa',
+            'Material respiratorio (pañuelos, máscaras): recipiente con tapa junto al paciente',
+            'Ropa de cama: precauciones estándar, manipular con guantes',
+            'El personal debe cambiarse el barbijo al salir de la habitación'
+        ];
+        salaItems = [
+            'Habitación individual o cohorte con pacientes de igual diagnóstico',
+            'Separación física de camas de al menos 1 metro',
+            'Usar barbijo quirúrgico al ingresar y en todo contacto a menos de 1 metro',
+            'Ventilación natural del ambiente recomendada'
+        ];
+    } else if (isoColor === 'azul') {
+        residuosItems = [
+            'Residuo infeccioso de alto riesgo: bolsa roja doble sellada',
+            'El personal debe usar N95 al manipular residuos del paciente',
+            'Traslado en contenedor rígido etiquetado como riesgo biológico',
+            'Nunca abrir bolsas para reutilizar ni comprimir manualmente'
+        ];
+        salaItems = [
+            'Habitación individual con presión negativa (6–12 renovaciones de aire/hora)',
+            'Puerta permanentemente cerrada con cartel de aislamiento visible',
+            'Personal debe colocarse el N95 antes de ingresar al pasillo del cuarto',
+            'Traslado del paciente solo si es imprescindible, con barbijo quirúrgico puesto en el paciente',
+            'Minimizar el número de personas en la habitación'
+        ];
+    } else {
+        residuosItems = [
+            'Residuos según tipo de material generado (general o patogénico)',
+            'Descarte según Precauciones Estándar institucionales',
+            'Guantes de examen para manipulación de cualquier residuo potencialmente contaminado'
+        ];
+        salaItems = [
+            'No se requiere aislamiento especial de habitación',
+            'Aplicar Precauciones Estándar en todo momento',
+            'Lavado de manos clínico antes y después de cada contacto con el paciente'
+        ];
     }
 
-    const residuosText = item.manejo_residuos_ropa?.basura?.trim() || residuosFallback;
-    const salaText = item.disposicion_sala?.trim() || salaFallback;
+    // Datos de BD si existen; sino, usar fallback
+    const stripBiblio = s => s.replace(/\(Fuente:[^)]+\)/gi, '').replace(/Fuente:[^)]+\)/gi, '').trim();
+    const residuosSource = item.manejo_residuos_ropa?.basura?.trim();
+    const residuosDisplay = residuosSource
+        ? residuosSource.split(/\.\s+/).filter(s => s.length > 8).map(stripBiblio).filter(Boolean)
+        : residuosItems;
+    const salaSource = item.disposicion_sala?.trim();
+    const salaDisplay = salaSource
+        ? salaSource.split(/\.\s+/).filter(s => s.length > 8).map(stripBiblio).filter(Boolean)
+        : salaItems;
+
     const resistencia = (item.mecanismos_resistencia || []);
-    const supervivencia = getSurvivalTime(item.nombre_cientifico);
+    const survivalArr = getSurvivalTime(item.nombre_cientifico);
 
     const detailStateEl = qs('#med-detail-state');
     detailStateEl.innerHTML = `
@@ -322,7 +449,7 @@ function openMedDetail(id) {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
                 Volver a resultados
             </button>
-            
+
             <div class="prof-card-hero">
                 <div class="prof-hero-left">
                     <span class="prof-label">NOMBRE CIENTÍFICO</span>
@@ -351,66 +478,48 @@ function openMedDetail(id) {
             </button>
 
             <div class="prof-grid">
-                <div class="section-card">
-                    <div class="section-header">
-                        <h3>MECANISMOS DE TRANSMISIÓN</h3>
-                    </div>
-                    <div class="mec-list">
-                        ${(item.mecanismos_infeccion || []).map(m => `
-                            <div class="mec-item-new">
-                                <span class="mec-dot-blue">•</span>
-                                <span>${m}</span>
-                            </div>
-                        `).join('') || '<p class="info-text">Sin datos registrados.</p>'}
-                    </div>
-                </div>
 
-                <div class="section-card">
-                    <div class="section-header">
-                        <h3>EQUIPO DE PROTECCIÓN PERSONAL</h3>
+                ${renderSection(
+                    'MECANISMOS DE TRANSMISIÓN',
+                    (item.mecanismos_infeccion || []),
+                    '#3b82f6', '#eff6ff'
+                )}
+
+                <div class="section-card" style="padding:0; overflow:hidden; border-top:3px solid #10b981;">
+                    <div class="section-header" style="background:#ecfdf5; border-bottom:1px solid #10b98122; margin:0; padding:0.875rem 1.25rem;">
+                        <h3 style="color:#059669; font-size:0.78rem; letter-spacing:0.06em; margin:0; padding:0;">EQUIPO DE PROTECCIÓN PERSONAL</h3>
                     </div>
-                    <div class="epp-grid-new">
+                    <div class="epp-grid-new" style="padding:1rem 1.25rem;">
                         ${(item.epp_requerido || []).map(epp => `
-                            <span class="epp-badge-gray">${epp}</span>
-                        `).join('') || '<span class="epp-badge-gray">Sin datos</span>'}
+                            <span class="epp-badge-green">${epp}</span>
+                        `).join('') || '<span class="epp-badge-green">Sin datos registrados</span>'}
                     </div>
                 </div>
 
-                <div class="section-card">
-                    <div class="section-header">
-                        <h3>MANEJO DE RESIDUOS Y ROPA</h3>
-                    </div>
-                    <p class="info-text">${residuosText}</p>
-                </div>
+                ${renderSection(
+                    'MANEJO DE RESIDUOS Y ROPA',
+                    residuosDisplay,
+                    '#f59e0b', '#fffbeb'
+                )}
 
-                <div class="section-card">
-                    <div class="section-header">
-                        <h3>DISPOSICIÓN DE LA SALA</h3>
-                    </div>
-                    <p class="info-text">${salaText}</p>
-                </div>
+                ${renderSection(
+                    'DISPOSICIÓN DE LA SALA',
+                    salaDisplay,
+                    '#7c3aed', '#f5f3ff'
+                )}
 
-                ${resistencia.length ? `
-                <div class="section-card">
-                    <div class="section-header">
-                        <h3>MECANISMOS DE RESISTENCIA</h3>
-                    </div>
-                    <div class="mec-list">
-                        ${resistencia.map(r => `
-                            <div class="mec-item-new">
-                                <span class="mec-dot-blue">•</span>
-                                <span>${r}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>` : ''}
+                ${resistencia.length ? renderSection(
+                    'MECANISMOS DE RESISTENCIA',
+                    resistencia,
+                    '#ef4444', '#fef2f2'
+                ) : ''}
 
-                <div class="section-card" style="grid-column: 1 / -1;">
-                    <div class="section-header">
-                        <h3>SUPERVIVENCIA EN SUPERFICIES</h3>
-                    </div>
-                    <p class="info-text">${supervivencia}</p>
-                </div>
+                ${renderSection(
+                    'SUPERVIVENCIA EN SUPERFICIES',
+                    survivalArr,
+                    '#0891b2', '#ecfeff'
+                )}
+
             </div>
         </div>
     `;
