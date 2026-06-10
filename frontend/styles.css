@@ -626,7 +626,325 @@ p, .info-text, .family-care-text, .family-tip-box p,
 
 /* ════════════════════════════
    RESPONSIVE
-════════════════════════════ */
+ ════════════════════════════ */
 @media (min-width: 500px) {
     .two-col-cards { grid-template-columns: 1fr 1fr; }
+    .prof-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ════════════════════════════
+   ESTILOS PREMIUM VISTA DETALLE NUEVA (MÉDICO Y FAMILIA)
+ ════════════════════════════ */
+
+/* Botón Volver */
+.back-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: none;
+    border: none;
+    color: var(--text-2);
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    margin-top: 0.5rem;
+    transition: color 0.15s;
+    font-family: inherit;
+}
+.back-link-btn:hover {
+    color: var(--accent);
+}
+
+/* Ficha del Profesional (Imagen 2) */
+.detail-header-professional {
+    background: var(--bg);
+    padding: 0.5rem 1rem 0.25rem;
+}
+
+.prof-card-hero {
+    background: var(--surface);
+    border-radius: var(--r-lg);
+    border: 1.5px solid var(--border);
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.25rem;
+    box-shadow: var(--sh-sm);
+    margin-top: 0.5rem;
+}
+
+.prof-hero-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.prof-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--text-3);
+    text-transform: uppercase;
+}
+
+.prof-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-1);
+    line-height: 1.25;
+}
+
+.prof-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.prof-badge {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 0.25rem 0.625rem;
+    border-radius: var(--r-pill);
+    font-size: 0.72rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.prof-hero-right {
+    flex-shrink: 0;
+}
+
+.prof-iso-box {
+    padding: 0.5rem 1rem;
+    border-radius: var(--r-md);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border: 1.5px solid transparent;
+}
+.prof-iso-box.verde {
+    background: var(--green-bg);
+    color: var(--green-dark);
+    border-color: rgba(16,185,129,.2);
+}
+.prof-iso-box.azul {
+    background: var(--blue-bg);
+    color: var(--blue-dark);
+    border-color: rgba(59,130,246,.2);
+}
+.prof-iso-box.amarillo {
+    background: var(--amber-bg);
+    color: var(--amber-dark);
+    border-color: rgba(245,158,11,.2);
+}
+.prof-iso-box.gris {
+    background: #f1f5f9;
+    color: #475569;
+    border-color: var(--border);
+}
+
+.prof-iso-icon {
+    font-size: 1.1rem;
+}
+
+/* Grid de Ficha Profesional */
+.prof-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 0.25rem;
+}
+
+.mec-item-new {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.88rem;
+    color: var(--text-2);
+    line-height: 1.5;
+    padding: 0.25rem 1.125rem;
+}
+
+.mec-dot-blue {
+    color: var(--blue);
+    font-size: 1.3rem;
+    line-height: 1;
+    font-weight: bold;
+}
+
+.epp-grid-new {
+    padding: 1rem 1.125rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.epp-badge-gray {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--r-pill);
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+/* Ficha Familiar (Imagen 1) */
+.detail-header-family {
+    background: var(--bg);
+    padding: 0.5rem 1rem 0.1rem;
+}
+
+.detail-body-family {
+    padding: 0.5rem 1rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.fam-header-box {
+    border-radius: var(--r-lg);
+    padding: 1.25rem;
+    border: 1.5px solid transparent;
+    box-shadow: var(--sh-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.fam-header-box.verde {
+    background: var(--green-bg);
+    border-color: rgba(16,185,129,.2);
+    color: var(--green-dark);
+}
+.fam-header-box.azul {
+    background: var(--blue-bg);
+    border-color: rgba(59,130,246,.2);
+    color: var(--blue-dark);
+}
+.fam-header-box.amarillo {
+    background: var(--amber-bg);
+    border-color: rgba(245,158,11,.2);
+    color: var(--amber-dark);
+}
+.fam-header-box.gris {
+    background: #f8fafc;
+    border-color: var(--border);
+    color: #334155;
+}
+
+.fam-header-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fam-header-icon {
+    font-size: 1.5rem;
+}
+
+.fam-header-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.fam-header-subtitle {
+    font-size: 0.88rem;
+    font-weight: 600;
+    opacity: 0.85;
+}
+
+.fam-header-desc {
+    font-size: 0.93rem;
+    line-height: 1.55;
+    margin-top: 0.25rem;
+    text-align: justify;
+}
+
+/* Cajas de Secciones Familiares */
+.fam-section-box {
+    background: var(--surface);
+    border-radius: var(--r-lg);
+    border: 1.5px solid var(--border);
+    padding: 1.25rem;
+    box-shadow: var(--sh-xs);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.fam-sec-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.fam-sec-title h3 {
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+.fam-sec-title.green {
+    color: #10b981;
+}
+.fam-sec-title.red {
+    color: #ef4444;
+}
+.fam-sec-title.blue {
+    color: #3b82f6;
+}
+
+.fam-sec-icon {
+    font-size: 1.1rem;
+}
+
+.fam-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding-left: 0.25rem;
+}
+
+.fam-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+}
+
+.bullet-icon {
+    font-size: 0.95rem;
+    margin-top: 0.1rem;
+    flex-shrink: 0;
+}
+
+.list-text {
+    font-size: 0.9rem;
+    color: var(--text-2);
+    line-height: 1.5;
+    text-align: justify;
+}
+
+.fam-epp-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.fam-epp-chip {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid var(--border);
+    padding: 0.45rem 1rem;
+    border-radius: var(--r-pill);
+    font-size: 0.85rem;
+    font-weight: 500;
 }

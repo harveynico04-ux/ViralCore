@@ -43,10 +43,67 @@ const EPP_ICON_MAP = {
     'doble':      '🤲',
 };
 
+// ─── Recomendaciones familiares predeterminadas por tipo de aislamiento ───
+const FAM_PRECAUTIONS = {
+    verde: { // Gotas de Pflugge
+        hacer: [
+            "Visitar con barbijo quirúrgico puesto correctamente.",
+            "Lavarte bien las manos antes y después de la visita.",
+            "Hablar con el equipo médico sobre la evolución.",
+            "Llevar objetos personales en bolsa cerrada."
+        ],
+        nohacer: [
+            "Entrar sin barbijo quirúrgico.",
+            "Acercarte a menos de 1 metro sin protección.",
+            "Ir a visitar si tenés fiebre, tos o síntomas respiratorios.",
+            "Llevar niños menores de 12 años (consultar con el equipo médico)."
+        ]
+    },
+    amarillo: { // Contacto
+        hacer: [
+            "Usar camisolín y guantes si vas a tocar al paciente o su entorno.",
+            "Lavarte bien las manos antes y después de la visita.",
+            "Mantener los objetos de uso personal del paciente dentro de la habitación."
+        ],
+        nohacer: [
+            "Tocar al paciente o superficies de la habitación sin colocarte guantes y camisolín.",
+            "Salir de la habitación usando el equipo de protección (descartalo adentro).",
+            "Ir a visitar si tenés infecciones en la piel o diarrea activa."
+        ]
+    },
+    azul: { // Respiratorio (Aéreo)
+        hacer: [
+            "Visitar usando barbijo N95 bien ajustado en todo momento.",
+            "Mantener la puerta de la habitación completamente cerrada.",
+            "Lavarte las manos meticulosamente antes y después de ingresar."
+        ],
+        nohacer: [
+            "Entrar a la habitación sin barbijo N95 (el barbijo quirúrgico común no es suficiente).",
+            "Mantener la puerta abierta.",
+            "Ir a visitar si tenés defensas bajas o no tenés inmunidad previa contra la enfermedad."
+        ]
+    },
+    gris: { // Estándar
+        hacer: [
+            "Lavarte bien las manos al ingresar y al retirarte de la habitación.",
+            "Visitar en horarios habituales siguiendo las pautas generales de higiene."
+        ],
+        nohacer: [
+            "Tocar fluidos corporales o heridas sin avisar al personal de enfermería.",
+            "Ingresar si tenés síntomas de enfermedades infectocontagiosas activas."
+        ]
+    }
+};
+
 // ─── Utilidades ──────────────────────────────
 const qs   = (s) => document.querySelector(s);
 const show  = (el) => el?.classList.remove('hidden');
 const hide  = (el) => el?.classList.add('hidden');
+
+// Modificado para ordenar alfabéticamente
+function sortPathogens(list) {
+    return list.sort((a, b) => a.nombre_cientifico.localeCompare(b.nombre_cientifico));
+}
 
 function debounce(fn, ms) {
     let t;
@@ -131,10 +188,10 @@ async function fetchAndRender(ctx, query = '') {
     try {
         const res  = await fetch(`${API}/patogenos?q=${encodeURIComponent(query)}`);
         const data = await res.json();
-        allPathogens = data;
-        if (ctx === 'medical') renderMedResults(data);
-        if (ctx === 'family')  renderFamResults(data);
-        if (ctx === 'admin')   renderAdminList(data);
+        allPathogens = sortPathogens(data);
+        if (ctx === 'medical') renderMedResults(allPathogens);
+        if (ctx === 'family')  renderFamResults(allPathogens);
+        if (ctx === 'admin')   renderAdminList(allPathogens);
     } catch (e) {
         console.error('Error API:', e);
     }
@@ -147,39 +204,39 @@ function resetMed() {
     medState = 'search';
     show(qs('#med-search-state'));
     hide(qs('#med-detail-state'));
-    show(qs('#med-hint'));
-    hide(qs('#med-results'));
+    hide(qs('#med-hint')); // Ocultamos el hint para que no confunda
+    show(qs('#med-results'));
     hide(qs('#med-empty'));
     qs('#search-med').value = '';
     hide(qs('#clear-med'));
+    fetchAndRender('medical', ''); // Cargar todos por defecto
 }
 
 qs('#search-med').addEventListener('input', debounce(e => {
     const q = e.target.value.trim();
     q ? show(qs('#clear-med')) : hide(qs('#clear-med'));
-    if (!q) { show(qs('#med-hint')); hide(qs('#med-results')); hide(qs('#med-empty')); return; }
-    hide(qs('#med-hint'));
-    fetchAndRender('medical', q);
+    fetchAndRender('medical', q); // Buscamos (si está vacío trae todos)
 }, 280));
 
 function clearSearch(ctx) {
     qs(`#search-${ctx}`).value = '';
     hide(qs(`#clear-${ctx}`));
-    show(qs(`#${ctx}-hint`));
-    hide(qs(`#${ctx}-results`));
+    hide(qs(`#${ctx}-hint`));
+    show(qs(`#${ctx}-results`));
     hide(qs(`#${ctx}-empty`));
+    fetchAndRender(ctx, ''); // Volver a listar todos
 }
 
 function renderMedResults(data) {
     const list  = qs('#med-results');
     const empty = qs('#med-empty');
     if (!data.length) { hide(list); show(empty); return; }
-    show(list); hide(empty); hide(qs('#med-hint'));
+    show(list); hide(empty);
     list.innerHTML = data.map((item, i) => {
         const color = getColor(item.tipo_aislamiento?.color_cartel);
         const abbr  = getIsoAbbr(item.tipo_aislamiento?.nombre);
         return `
-        <div class="result-card" style="animation-delay:${i * 35}ms" onclick="openMedDetail('${item._id}')">
+        <div class="result-card" style="animation-delay:${i * 20}ms" onclick="openMedDetail('${item._id}')">
             <div class="rc-icon ${color}">${abbr}</div>
             <div class="rc-info">
                 <div class="rc-name">${item.nombre_cientifico}</div>
@@ -197,35 +254,93 @@ function openMedDetail(id) {
     medState = 'detail';
 
     const color = getColor(item.tipo_aislamiento?.color_cartel);
+    const isoIcon = ISO_ICON[color] || '🏥';
 
-    // Hero
-    qs('#med-hero').className  = `detail-hero ${color}`;
-    qs('#med-hero-chip').textContent = item.tipo_aislamiento?.nombre || '';
-    qs('#med-hero-name').textContent = item.nombre_cientifico;
-    const sub = item.clasificacion
-        ? [item.clasificacion.grupo_principal, item.clasificacion.subcategoria].filter(Boolean).join(' · ')
-        : '';
-    qs('#med-hero-sub').textContent = sub;
+    // Renderizar Ficha Técnica del Profesional según Imagen 2
+    const detailStateEl = qs('#med-detail-state');
+    detailStateEl.innerHTML = `
+        <div class="detail-header-professional">
+            <button class="back-link-btn" onclick="closeMedDetail()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                Volver a resultados
+            </button>
+            
+            <div class="prof-card-hero">
+                <div class="prof-hero-left">
+                    <span class="prof-label">NOMBRE CIENTÍFICO</span>
+                    <h2 class="prof-name">${item.nombre_cientifico}</h2>
+                    <div class="prof-badges">
+                        <span class="prof-badge"><span class="badge-emoji">📁</span> ${item.clasificacion?.grupo_principal || 'Grupo'}</span>
+                        ${item.clasificacion?.subcategoria ? `<span class="prof-badge">${item.clasificacion.subcategoria}</span>` : ''}
+                    </div>
+                </div>
+                <div class="prof-hero-right">
+                    <div class="prof-iso-box ${color}">
+                        <span class="prof-iso-icon">${isoIcon}</span>
+                        <span class="prof-iso-name">${item.tipo_aislamiento?.nombre || 'Estándar'}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    // EPP Chips (sin ícono emoji)
-    qs('#med-epp').innerHTML = (item.epp_requerido || []).map(epp => `
-        <div class="epp-chip">
-            <span>${epp}</span>
-        </div>`).join('') || '<p style="padding:.5rem;color:var(--text-3)">Sin datos</p>';
+        <div class="detail-body">
+            <button class="warn-trigger" onclick="openCriticalModal()">
+                <span class="warn-trigger-left">
+                    <span class="warn-emoji">⚠️</span>
+                    <span>Ver Advertencias de Aislamiento</span>
+                </span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
 
-    // Mecanismos
-    qs('#med-mec').innerHTML = (item.mecanismos_infeccion || []).map(m => `
-        <div class="mec-item">
-            <span class="mec-dot">●</span>
-            <span>${m}</span>
-        </div>`).join('') || '<p class="info-text" style="padding:.5rem">Sin datos</p>';
+            <div class="prof-grid">
+                <div class="section-card">
+                    <div class="section-header">
+                        <span class="header-icon">⚡</span>
+                        <h3>MECANISMOS DE TRANSMISIÓN</h3>
+                    </div>
+                    <div class="mec-list">
+                        ${(item.mecanismos_infeccion || []).map(m => `
+                            <div class="mec-item-new">
+                                <span class="mec-dot-blue">•</span>
+                                <span>${m}</span>
+                            </div>
+                        `).join('') || '<p class="info-text">Sin datos</p>'}
+                    </div>
+                </div>
 
-    // Textos
-    qs('#med-sala').textContent     = item.disposicion_sala               || 'Sin especificaciones.';
-    qs('#med-residuos').textContent = item.manejo_residuos_ropa?.basura   || 'Sin especificaciones.';
+                <div class="section-card">
+                    <div class="section-header">
+                        <span class="header-icon">🛡️</span>
+                        <h3>EQUIPO DE PROTECCIÓN PERSONAL</h3>
+                    </div>
+                    <div class="epp-grid-new">
+                        ${(item.epp_requerido || []).map(epp => `
+                            <span class="epp-badge-gray">${epp}</span>
+                        `).join('') || '<span class="epp-badge-gray">Sin datos</span>'}
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <div class="section-header">
+                        <span class="header-icon">🗑️</span>
+                        <h3>MANEJO DE RESIDUOS</h3>
+                    </div>
+                    <p class="info-text">${item.manejo_residuos_ropa?.basura || 'Sin especificaciones.'}</p>
+                </div>
+
+                <div class="section-card">
+                    <div class="section-header">
+                        <span class="header-icon">🏠</span>
+                        <h3>DISPOSICIÓN DE LA SALA</h3>
+                    </div>
+                    <p class="info-text">${item.disposicion_sala || 'Sin especificaciones.'}</p>
+                </div>
+            </div>
+        </div>
+    `;
 
     hide(qs('#med-search-state'));
-    show(qs('#med-detail-state'));
+    show(detailStateEl);
     setAppBar(item.nombre_cientifico.split(' ').slice(0,2).join(' '), true);
     window.scrollTo(0, 0);
 }
@@ -257,31 +372,30 @@ function resetFam() {
     famState = 'search';
     show(qs('#fam-search-state'));
     hide(qs('#fam-detail-state'));
-    show(qs('#fam-hint'));
-    hide(qs('#fam-results'));
+    hide(qs('#fam-hint')); // Ocultamos hint para no confundir
+    show(qs('#fam-results'));
     hide(qs('#fam-empty'));
     qs('#search-fam').value = '';
     hide(qs('#clear-fam'));
+    fetchAndRender('family', ''); // Cargar todos por defecto
 }
 
 qs('#search-fam').addEventListener('input', debounce(e => {
     const q = e.target.value.trim();
     q ? show(qs('#clear-fam')) : hide(qs('#clear-fam'));
-    if (!q) { show(qs('#fam-hint')); hide(qs('#fam-results')); hide(qs('#fam-empty')); return; }
-    hide(qs('#fam-hint'));
-    fetchAndRender('family', q);
+    fetchAndRender('family', q); // Buscamos (si está vacío trae todos)
 }, 280));
 
 function renderFamResults(data) {
     const list  = qs('#fam-results');
     const empty = qs('#fam-empty');
     if (!data.length) { hide(list); show(empty); return; }
-    show(list); hide(empty); hide(qs('#fam-hint'));
+    show(list); hide(empty);
     list.innerHTML = data.map((item, i) => {
         const color = getColor(item.tipo_aislamiento?.color_cartel);
         const abbr  = getIsoAbbr(item.tipo_aislamiento?.nombre);
         return `
-        <div class="result-card" style="animation-delay:${i * 35}ms" onclick="openFamDetail('${item._id}')">
+        <div class="result-card" style="animation-delay:${i * 20}ms" onclick="openFamDetail('${item._id}')">
             <div class="rc-icon ${color}">${abbr}</div>
             <div class="rc-info">
                 <div class="rc-name">${item.nombre_cientifico}</div>
@@ -297,15 +411,81 @@ function openFamDetail(id) {
     if (!item) return;
     famState = 'detail';
     const color = getColor(item.tipo_aislamiento?.color_cartel);
+    const isoIcon = ISO_ICON[color] || '🏠';
 
-    qs('#fam-hero').className     = `detail-hero family-hero ${color}`;
-    qs('#fam-hero-chip').textContent = item.tipo_aislamiento?.nombre || '';
-    qs('#fam-hero-name').textContent = item.nombre_cientifico;
-    qs('#fam-cuidados').textContent  = item.cuidados_familia
-        || 'Consultá al equipo de enfermería para instrucciones específicas de cuidado.';
+    // Obtener las precauciones predeterminadas para este tipo de aislamiento
+    const precautions = FAM_PRECAUTIONS[color] || FAM_PRECAUTIONS.gris;
+
+    // Renderizar la Ficha Familiar exacta de la Imagen 1
+    const detailStateEl = qs('#fam-detail-state');
+    detailStateEl.innerHTML = `
+        <div class="detail-header-family">
+            <button class="back-link-btn" onclick="closeFamDetail()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                Volver a resultados
+            </button>
+        </div>
+
+        <div class="detail-body-family">
+            <!-- Caja de Cabecera Colorida -->
+            <div class="fam-header-box ${color}">
+                <div class="fam-header-title-row">
+                    <span class="fam-header-icon">${isoIcon}</span>
+                    <h2 class="fam-header-title">${item.nombre_cientifico}</h2>
+                </div>
+                <div class="fam-header-subtitle">Aislamiento: ${item.tipo_aislamiento?.nombre || 'Estándar'}</div>
+                <p class="fam-header-desc">${item.cuidados_familia || 'Su familiar se encuentra bajo precauciones de aislamiento para su cuidado y protección.'}</p>
+            </div>
+
+            <!-- Caja: ¿QUÉ PODÉS HACER DURANTE LA VISITA? -->
+            <div class="fam-section-box">
+                <div class="fam-sec-title green">
+                    <span class="fam-sec-icon">✅</span>
+                    <h3>¿QUÉ PODÉS HACER DURANTE LA VISITA?</h3>
+                </div>
+                <ul class="fam-list">
+                    ${precautions.hacer.map(h => `
+                        <li>
+                            <span class="bullet-icon green">✅</span>
+                            <span class="list-text">${h}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+
+            <!-- Caja: ¿QUÉ NO PODÉS HACER? -->
+            <div class="fam-section-box">
+                <div class="fam-sec-title red">
+                    <span class="fam-sec-icon">❌</span>
+                    <h3>¿QUÉ NO PODÉS HACER?</h3>
+                </div>
+                <ul class="fam-list">
+                    ${precautions.nohacer.map(nh => `
+                        <li>
+                            <span class="bullet-icon red">❌</span>
+                            <span class="list-text">${nh}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+
+            <!-- Caja: ¿QUÉ ELEMENTOS NECESITÁS USAR? -->
+            <div class="fam-section-box">
+                <div class="fam-sec-title blue">
+                    <span class="fam-sec-icon">${isoIcon}</span>
+                    <h3>¿QUÉ ELEMENTOS NECESITÁS USAR?</h3>
+                </div>
+                <div class="fam-epp-chips">
+                    ${(item.epp_requerido || []).map(epp => `
+                        <span class="fam-epp-chip">${epp}</span>
+                    `).join('') || '<span class="fam-epp-chip">Lavado de manos</span>'}
+                </div>
+            </div>
+        </div>
+    `;
 
     hide(qs('#fam-search-state'));
-    show(qs('#fam-detail-state'));
+    show(detailStateEl);
     setAppBar('Cuidados', true);
     window.scrollTo(0, 0);
 }
@@ -316,6 +496,7 @@ function closeFamDetail() {
     show(qs('#fam-search-state'));
     setAppBar('Para la Familia', true);
 }
+
 
 // ════════════════════════════════════════════
 //  ADMIN - Login
