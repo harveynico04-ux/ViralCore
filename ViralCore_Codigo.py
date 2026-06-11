@@ -121,7 +121,7 @@ def chat_ai():
         
         prompt = contexto_viralcore + f"Pregunta del usuario: {mensaje_usuario}\nRespuesta:"
         
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-pro')
         response = model.generate_content(prompt)
         
         return jsonify({"success": True, "respuesta": response.text})
@@ -157,7 +157,7 @@ def upload_pdf():
         prompt += "Devuelve la respuesta ESTRICTAMENTE en formato JSON válido, que sea un diccionario donde la clave es el nombre del microorganismo (ej. 'staphylococcus aureus', 'clostridium difficile', 'klebsiella', 'mycobacterium tuberculosis') y el valor es un arreglo de strings (cada string es una alerta o normativa local encontrada para ese patógeno).\n"
         prompt += "No incluyas texto fuera del JSON. Ejemplo de salida esperada:\n{\n  \"staphylococcus aureus\": [\"En esta institución para MRSA se debe usar cofia y triple guante\", \"Aislamiento preventivo mínimo de 72hs\"],\n  \"clostridium difficile\": [\"Lavado estricto con clorhexidina 4% exclusivo\"]\n}\n"
 
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-pro')
         response = model.generate_content(prompt)
         
         # Limpiar posible formato Markdown del output (```json ... ```)
