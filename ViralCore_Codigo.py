@@ -5,7 +5,7 @@ from bson import ObjectId
 import sys
 import os
 from dotenv import load_dotenv
-from google import genai
+import google.generativeai as genai
 import pdfplumber
 import json
 
@@ -14,7 +14,13 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 gemini_client = None
 if GEMINI_API_KEY and GEMINI_API_KEY != "INGRESA_TU_API_KEY_AQUI":
-    gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+    genai.configure(api_key=GEMINI_API_KEY)
+    gemini_client = True  # Flag para indicar que está configurado
+
+# Modelo asignado por la cátedra (Universidad Austral - Ciencia de Datos para la Medicina)
+MODEL_NAME = "gemini-2.5-flash-lite-preview-06-17"
+GEN_CONFIG = {"temperature": 0.0, "max_output_tokens": 800}
+
 # 1. Inicializamos el servidor de Flask
 app = Flask(__name__)
 CORS(app) 
@@ -108,7 +114,7 @@ def chat_ai():
         mensaje_usuario = datos.get('mensaje')
         
         if not gemini_client:
-            return jsonify({"success": False, "respuesta": "Error: La API Key de Gemini no está configurada en el servidor. Por favor, añádela en el archivo .env."}), 500
+            return jsonify({"success": False, "respuesta": "Error: La API Key de Gemini no está configurada en el servidor."}), 500
 
         # Obtener patógenos de la base de datos para darle contexto al LLM
         todos_patogenos = list(coleccion_patogenos.find({}, {"_id": 0}))
@@ -122,10 +128,8 @@ def chat_ai():
         
         prompt = contexto_viralcore + f"Pregunta del usuario: {mensaje_usuario}\nRespuesta:"
         
-        response = gemini_client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt
-        )
+        model = genai.GenerativeModel(MODEL_NAME)
+        response = model.generate_content(prompt, generation_config=GEN_CONFIG)
         
         return jsonify({"success": True, "respuesta": response.text})
     except Exception as e:
@@ -157,13 +161,11 @@ def upload_pdf():
         prompt = "Eres un analista experto en protocolos hospitalarios de control de infecciones. A continuación se presenta el texto extraído de un manual de protocolos local de un hospital en PDF:\n\n"
         prompt += pdf_text[:15000]
         prompt += "\n\nAnaliza este documento detalladamente y extrae ÚNICAMENTE las reglas específicas, recomendaciones locales, normativas particulares o diferencias en los protocolos de bioseguridad para distintos microorganismos o tipos de aislamiento (por ejemplo: MRSA, KPC, Clostridium difficile, Tuberculosis, Influenza, Aislamiento por Gotas, Aislamiento de Contacto, etc). "
-        prompt += "Devuelve la respuesta ESTRICTAMENTE en formato JSON válido, que sea un diccionario donde la clave es el nombre del microorganismo (ej. 'staphylococcus aureus', 'clostridium difficile', 'klebsiella', 'mycobacterium tuberculosis') y el valor es un arreglo de strings (cada string es una alerta o normativa local encontrada para ese patógeno).\n"
-        prompt += "No incluyas texto fuera del JSON. Ejemplo de salida esperada:\n{\n  \"staphylococcus aureus\": [\"En esta institución para MRSA se debe usar cofia y triple guante\", \"Aislamiento preventivo mínimo de 72hs\"],\n  \"clostridium difficile\": [\"Lavado estricto con clorhexidina 4% exclusivo\"]\n}\n"
+        prompt += "Devuelve la respuesta ESTRICTAMENTE en formato JSON válido, que sea un diccionario donde la clave es el nombre del microorganismo y el valor es un arreglo de strings (cada string es una alerta o normativa local).\n"
+        prompt += "No incluyas texto fuera del JSON. Ejemplo:\n{\n  \"staphylococcus aureus\": [\"En esta institución se usa triple guante para MRSA\"]\n}\n"
 
-        response = gemini_client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt
-        )
+        model = genai.GenerativeModel(MODEL_NAME)
+        response = model.generate_content(prompt, generation_config=GEN_CONFIG)
         
         # Limpiar posible formato Markdown del output (```json ... ```)
         respuesta_texto = response.text.replace('```json', '').replace('```', '').strip()
