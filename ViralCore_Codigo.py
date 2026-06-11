@@ -3,7 +3,17 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from bson import ObjectId
 import sys
+import os
+from dotenv import load_dotenv
+import google.generativeai as genai
+import pdfplumber
+import json
 
+# Cargar variables de entorno
+load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY and GEMINI_API_KEY != "INGRESA_TU_API_KEY_AQUI":
+    genai.configure(api_key=GEMINI_API_KEY)
 # 1. Inicializamos el servidor de Flask
 app = Flask(__name__)
 CORS(app) 
@@ -89,7 +99,90 @@ def editar_patogeno(id_patogeno):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 400
 
+# 6. Chatbot con IA
+@app.route('/api/chat', methods=['POST'])
+def chat_ai():
+    try:
+        datos = request.json
+        mensaje_usuario = datos.get('mensaje')
+        
+        if not GEMINI_API_KEY or GEMINI_API_KEY == "INGRESA_TU_API_KEY_AQUI":
+            return jsonify({"success": False, "respuesta": "Error: La API Key de Gemini no está configurada en el servidor. Por favor, añádela en el archivo .env."}), 500
 
+        # Obtener patógenos de la base de datos para darle contexto al LLM
+        todos_patogenos = list(coleccion_patogenos.find({}, {"_id": 0}))
+        
+        contexto_viralcore = "Eres el Asistente Experto en Bioseguridad de ViralCore. "
+        contexto_viralcore += "Tu objetivo es responder de forma clara, profesional y directa preguntas sobre protocolos de aislamiento hospitalario, uso de Equipo de Protección Personal (EPP), manejo de residuos, y supervivencia de patógenos en superficies. "
+        contexto_viralcore += "DEBES basar tus respuestas ESTRICTAMENTE en la base de datos de ViralCore que te proveo a continuación. "
+        contexto_viralcore += "Si el usuario pregunta algo general, dale el paso a paso. Si pregunta sobre un patógeno específico, dale la información exacta (EPP, Cartel, etc.). "
+        contexto_viralcore += "No inventes información externa. Si no sabes algo o no está en la base de datos, dilo claramente. Usa un tono amigable pero muy profesional.\n\n"
+        contexto_viralcore += f"Base de datos actual de ViralCore:\n{str(todos_patogenos)}\n\n"
+        
+        prompt = contexto_viralcore + f"Pregunta del usuario: {mensaje_usuario}\nRespuesta:"
+        
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content(prompt)
+        
+        return jsonify({"success": True, "respuesta": response.text})
+    except Exception as e:
+        return jsonify({"success": False, "respuesta": f"Error del servidor de IA: {str(e)}"}), 500
+
+# 7. Procesar PDF de Protocolos Locales
+@app.route('/api/upload-pdf', methods=['POST'])
+def upload_pdf():
+    try:
+        if 'file' not in request.files:
+            return jsonify({"success": False, "message": "No se envió ningún archivo PDF."}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"success": False, "message": "Nombre de archivo vacío."}), 400
+            
+        if not GEMINI_API_KEY or GEMINI_API_KEY == "INGRESA_TU_API_KEY_AQUI":
+            return jsonify({"success": False, "message": "Error: La API Key de Gemini no está configurada."}), 500
+
+        # Extraer texto del PDF
+        pdf_text = ""
+        with pdfplumber.open(file) as pdf:
+            for page in pdf.pages:
+                text = page.extract_text()
+                if text:
+                    pdf_text += text + "\n"
+                    
+        # Consultar a Gemini para extraer reglas
+        prompt = "Eres un analista experto en protocolos hospitalarios de control de infecciones. A continuación se presenta el texto extraído de un manual de protocolos local de un hospital en PDF:\n\n"
+        prompt += pdf_text[:15000] # Limite aproximado de caracteres para evitar tokens excesivos si el PDF es inmenso
+        prompt += "\n\nAnaliza este documento detalladamente y extrae ÚNICAMENTE las reglas específicas, recomendaciones locales, normativas particulares o diferencias en los protocolos de bioseguridad para distintos microorganismos o tipos de aislamiento (por ejemplo: MRSA, KPC, Clostridium difficile, Tuberculosis, Influenza, Aislamiento por Gotas, Aislamiento de Contacto, etc). "
+        prompt += "Devuelve la respuesta ESTRICTAMENTE en formato JSON válido, que sea un diccionario donde la clave es el nombre del microorganismo (ej. 'staphylococcus aureus', 'clostridium difficile', 'klebsiella', 'mycobacterium tuberculosis') y el valor es un arreglo de strings (cada string es una alerta o normativa local encontrada para ese patógeno).\n"
+        prompt += "No incluyas texto fuera del JSON. Ejemplo de salida esperada:\n{\n  \"staphylococcus aureus\": [\"En esta institución para MRSA se debe usar cofia y triple guante\", \"Aislamiento preventivo mínimo de 72hs\"],\n  \"clostridium difficile\": [\"Lavado estricto con clorhexidina 4% exclusivo\"]\n}\n"
+
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content(prompt)
+        
+        # Limpiar posible formato Markdown del output (```json ... ```)
+        respuesta_texto = response.text.replace('```json', '').replace('```', '').strip()
+        alertas = json.loads(respuesta_texto)
+        
+        # Actualizar los patógenos en MongoDB con las alertas locales
+        patogenos_modificados = 0
+        for nombre_patogeno, lista_alertas in alertas.items():
+            # Buscar patógenos cuyo nombre contenga el nombre extraído
+            resultado = coleccion_patogenos.update_many(
+                {"nombre_cientifico": {"$regex": nombre_patogeno, "$options": "i"}},
+                {"$set": {"alertas_locales": lista_alertas}}
+            )
+            patogenos_modificados += resultado.modified_count
+            
+        return jsonify({
+            "success": True, 
+            "message": f"PDF procesado correctamente por la IA. Se actualizaron las normativas de {patogenos_modificados} patógenos.", 
+            "alertas": alertas
+        })
+    except json.JSONDecodeError:
+        return jsonify({"success": False, "message": "Error: La IA no devolvió el formato JSON correctamente."}), 500
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Error procesando PDF: {str(e)}"}), 500
 # Punto de inicio
 if __name__ == '__main__':
     print("\n" + "="*50)

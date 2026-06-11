@@ -443,6 +443,27 @@ function openMedDetail(id) {
     const survivalArr = getSurvivalTime(item.nombre_cientifico);
 
     const detailStateEl = qs('#med-detail-state');
+    
+    // Preparar el HTML de las Alertas Locales si existen
+    let alertasLocalesHTML = '';
+    if (item.alertas_locales && item.alertas_locales.length > 0) {
+        alertasLocalesHTML = `
+            <div class="section-card" style="padding:0; overflow:hidden; border-top: 3px solid #ef4444; margin-bottom: 1rem;">
+                <div class="section-header" style="background:#fef2f2; border-bottom:1px solid #ef444422; margin:0; padding:0.875rem 1.25rem;">
+                    <h3 style="color:#ef4444; font-size:0.78rem; letter-spacing:0.06em; margin:0; padding:0;">⚠️ NORMATIVA LOCAL (HOSPITAL)</h3>
+                </div>
+                <div class="mec-list" style="padding:0.875rem 1.25rem;">
+                    ${item.alertas_locales.map(alerta => `
+                        <div class="mec-item-new" style="gap:0.75rem; align-items:flex-start; padding:0.3rem 0;">
+                            <span style="color:#ef4444; font-size:0.9rem; flex-shrink:0; line-height:1.6;">▸</span>
+                            <strong style="color:#b91c1c; font-size:0.9rem; line-height:1.6;">${alerta}</strong>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
     detailStateEl.innerHTML = `
         <div class="detail-header-professional">
             <button class="back-link-btn" onclick="closeMedDetail()">
@@ -478,6 +499,8 @@ function openMedDetail(id) {
             </button>
 
             <div class="prof-grid">
+                ${alertasLocalesHTML}
+
 
                 ${renderSection(
                     'MECANISMOS DE TRANSMISIÓN',
@@ -1113,4 +1136,108 @@ function renderCartelPreview(id) {
         </div>
     `;
     area.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ════════════════════════════════════════════
+//  CHATBOT DE IA
+// ════════════════════════════════════════════
+let chatOpen = false;
+
+function toggleChat() {
+    const window = qs('#chatbot-window');
+    const fab = qs('#chatbot-fab');
+    if (chatOpen) {
+        window.classList.add('hidden');
+        fab.style.transform = 'scale(1)';
+    } else {
+        window.classList.remove('hidden');
+        fab.style.transform = 'scale(0)';
+    }
+    chatOpen = !chatOpen;
+}
+
+async function sendChatMessage() {
+    const input = qs('#chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    appendMessage('user', text);
+    input.value = '';
+
+    const typingId = appendMessage('bot', 'Escribiendo...');
+
+    try {
+        const res = await fetch(`${API}/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mensaje: text })
+        });
+        const data = await res.json();
+        
+        const msgEl = document.getElementById(typingId);
+        if (data.success) {
+            msgEl.querySelector('.msg-bubble').innerHTML = data.respuesta.replace(/\n/g, '<br>');
+        } else {
+            msgEl.querySelector('.msg-bubble').textContent = data.respuesta || "Lo siento, hubo un error de conexión con la IA.";
+        }
+    } catch (e) {
+        document.getElementById(typingId).querySelector('.msg-bubble').textContent = "Error de red al conectar con el asistente.";
+    }
+}
+
+function appendMessage(sender, text) {
+    const container = qs('#chat-messages');
+    const id = 'msg-' + Date.now();
+    const html = `
+        <div class="chat-msg ${sender}" id="${id}">
+            <div class="msg-bubble">${text}</div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+    container.scrollTop = container.scrollHeight;
+    return id;
+}
+
+// ════════════════════════════════════════════
+//  SUBIDA DE PDF PROTOCOLOS
+// ════════════════════════════════════════════
+async function uploadLocalProtocol() {
+    const fileInput = qs('#admin-pdf-upload');
+    const status = qs('#pdf-upload-status');
+    const file = fileInput.files[0];
+
+    if (!file) {
+        status.style.display = 'block';
+        status.style.color = 'red';
+        status.textContent = 'Seleccioná un archivo PDF primero.';
+        return;
+    }
+
+    status.style.display = 'block';
+    status.style.color = 'var(--text-2)';
+    status.textContent = 'Procesando PDF con IA. Esto puede tardar varios segundos...';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const res = await fetch(`${API}/upload-pdf`, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            status.style.color = 'green';
+            status.textContent = data.message;
+            // Refrescar lista de patógenos para aplicar las alertas locales
+            fetchAndRender('admin');
+        } else {
+            status.style.color = 'red';
+            status.textContent = data.message;
+        }
+    } catch (e) {
+        status.style.color = 'red';
+        status.textContent = 'Error de conexión al subir el PDF.';
+    }
 }

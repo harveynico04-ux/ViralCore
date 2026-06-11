@@ -1039,6 +1039,201 @@ p, .info-text, .family-care-text, .family-tip-box p,
 }
 
 .epp-badge-gray {
+}
+
+.fam-header-icon {
+    font-size: 1.5rem;
+}
+
+.fam-header-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.fam-header-subtitle {
+    font-size: 0.88rem;
+    font-weight: 600;
+    opacity: 0.85;
+}
+
+.fam-header-desc {
+    font-size: 0.93rem;
+    line-height: 1.55;
+    margin-top: 0.25rem;
+    text-align: justify;
+}
+
+/* Cajas de Secciones Familiares */
+.fam-section-box {
+    background: var(--surface);
+    border-radius: var(--r-lg);
+    border: 1.5px solid var(--border);
+    padding: 1.25rem;
+    box-shadow: var(--sh-xs);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.fam-sec-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.fam-sec-title h3 {
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+.fam-sec-title.green {
+    color: #10b981;
+}
+.fam-sec-title.red {
+    color: #ef4444;
+}
+.fam-sec-title.blue {
+    color: #3b82f6;
+}
+
+.fam-sec-icon {
+    font-size: 1.1rem;
+}
+
+.fam-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding-left: 0.25rem;
+}
+
+.fam-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+}
+
+.bullet-icon {
+    font-size: 0.95rem;
+    margin-top: 0.1rem;
+    flex-shrink: 0;
+}
+
+.list-text {
+    font-size: 0.9rem;
+    color: var(--text-2);
+    line-height: 1.5;
+    text-align: justify;
+}
+
+.fam-epp-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.fam-epp-chip {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid var(--border);
+    padding: 0.45rem 1rem;
+    border-radius: var(--r-pill);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* ════════════════════════════
+   ESTILOS Y ESTÍMULOS DE TRIAJE E IMPRESIÓN (Puntos 4, 6 y 7)
+ ════════════════════════════ */
+
+/* Tarjetas de Ficha Técnica Profesional con sutil elevación en hover (Estímulos) */
+.section-card {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, border-color 0.22s ease !important;
+}
+.section-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--sh-md);
+    border-color: var(--accent-light);
+}
+
+.prof-card-hero {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease !important;
+}
+.prof-card-hero:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--sh-md);
+}
+
+/* Efecto en el botón de advertencia */
+.warn-trigger {
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
+}
+.warn-trigger:hover {
+    transform: scale(1.01);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+}
+
+/* Estilos de Carteles de Impresión */
+.cartel-print-box {
+    margin: 1.5rem auto;
+    max-width: 480px;
+    background: var(--surface);
+    transition: transform 0.3s ease;
+}
+.cartel-print-box.verde {
+    border-color: var(--green) !important;
+    color: var(--green-dark);
+}
+.cartel-print-box.azul {
+    border-color: var(--blue) !important;
+    color: var(--blue-dark);
+}
+.cartel-print-box.amarillo {
+    border-color: var(--amber) !important;
+    color: var(--amber-dark);
+}
+
+/* Soporte para Impresión limpia del Cartel */
+@media print {
+    header.app-bar, main.app-main > section:not(#view-carteles), #view-carteles > div > div:not(#cartel-preview-area), #cartel-preview-area > div:first-child {
+        display: none !important;
+    }
+    body {
+        background: white !important;
+    }
+    .app-main {
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+    .cartel-print-box {
+        border: 12px solid !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 3rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
+.epp-grid-new {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.epp-badge-green {
+    background-color: #d1fae5;
+    color: #047857;
+    padding: 0.35rem 0.8rem;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: 1px solid #10b981;
+}
+
+.epp-badge-gray {
     background-color: #f3f4f6;
     color: #4b5563;
     padding: 0.35rem 0.8rem;
@@ -1046,4 +1241,127 @@ p, .info-text, .family-care-text, .family-tip-box p,
     font-size: 0.85rem;
     font-weight: 500;
     border: 1px solid #d1d5db;
+}
+
+/* ════════════════════════════
+   CHATBOT FLOTANTE
+════════════════════════════ */
+.chatbot-fab {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    box-shadow: var(--sh-lg);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: transform 0.2s;
+}
+.chatbot-fab:hover { transform: scale(1.05); }
+
+.chatbot-window {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 350px;
+    max-width: calc(100vw - 40px);
+    height: 500px;
+    max-height: calc(100vh - 120px);
+    background: #fff;
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-xl);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: opacity 0.3s, transform 0.3s;
+    transform-origin: bottom right;
+}
+.chatbot-window.hidden {
+    opacity: 0;
+    transform: scale(0.9);
+    pointer-events: none;
+}
+
+.chat-header {
+    background: var(--accent);
+    color: white;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.chat-title { font-weight: 600; font-size: 0.95rem; }
+.chat-status { font-size: 0.75rem; opacity: 0.8; }
+.chat-close { background: none; border: none; color: white; cursor: pointer; }
+
+.chat-messages {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background: #f8fafc;
+}
+
+.chat-msg {
+    display: flex;
+    max-width: 85%;
+}
+.chat-msg.bot { align-self: flex-start; }
+.chat-msg.user { align-self: flex-end; }
+
+.chat-msg .msg-bubble {
+    padding: 0.75rem 1rem;
+    border-radius: 18px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+.chat-msg.bot .msg-bubble {
+    background: white;
+    color: var(--text-1);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+}
+.chat-msg.user .msg-bubble {
+    background: var(--accent);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-input-area {
+    display: flex;
+    padding: 0.75rem;
+    background: white;
+    border-top: 1px solid var(--border);
+    gap: 0.5rem;
+}
+.chat-input-area input {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    outline: none;
+    font-size: 0.9rem;
+}
+.chat-input-area button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 }
