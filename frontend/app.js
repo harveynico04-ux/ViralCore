@@ -1442,13 +1442,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     if (qrId) {
         // Modo escaneo QR: Cargar directo la ficha técnica médica del patógeno
-        topView = 'medical';
-        medState = 'detail';
-        qs('#btn-prof').classList.add('active');
-        hide(qs('#view-landing'));
-        show(qs('#view-medical'));
-        show(qs('#btn-back'));
-        qs('#app-bar-title').textContent = 'Ficha Médica';
+        goTo('medical');
         
         // Fetch de los datos
         await fetchAndRender('medical', '');
