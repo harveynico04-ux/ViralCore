@@ -294,9 +294,11 @@ async function fetchAndRender(ctx, query = '') {
         if (!res.ok) throw new Error('Servidor respondió con error');
         data = await res.json();
         
-        // Guardar en caché local
-        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-        localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+        // Guardar en caché local SOLO si es la lista completa
+        if (!query) {
+            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+            localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+        }
         
         hide(qs('#offline-banner'));
     } catch (e) {
