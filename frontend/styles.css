@@ -189,6 +189,39 @@ p, .info-text, .family-care-text, .family-tip-box p,
 ════════════════════════════ */
 .search-wrap { padding: 1rem 1rem .5rem; }
 
+/* Filtros por tipo de aislamiento */
+.filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.5rem 0 0.25rem 0;
+}
+.filter-chip {
+    border: none;
+    border-radius: 20px;
+    padding: 0.3rem 0.85rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    background: var(--surface-2, #f1f5f9);
+    color: var(--text-2);
+    letter-spacing: 0.02em;
+}
+.filter-chip:hover { transform: translateY(-1px); filter: brightness(0.95); }
+.filter-chip.active { color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.filter-chip[data-filter="todos"].active  { background: var(--accent, #6366f1); }
+.filter-chip.contacto.active              { background: #f59e0b; }
+.filter-chip.gotas.active                 { background: #3b82f6; }
+.filter-chip.aereo.active                 { background: #8b5cf6; }
+.filter-chip.estandar.active              { background: #10b981; }
+/* Color de texto en chips no activos */
+.filter-chip.contacto { color: #b45309; }
+.filter-chip.gotas    { color: #1d4ed8; }
+.filter-chip.aereo    { color: #6d28d9; }
+.filter-chip.estandar { color: #047857; }
+
+
 .search-box {
     background: var(--surface); border-radius: var(--r-pill);
     border: 1.5px solid var(--border); display: flex; align-items: center;

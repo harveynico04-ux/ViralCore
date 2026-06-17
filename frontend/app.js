@@ -294,6 +294,38 @@ async function fetchAndRender(ctx, query = '') {
     }
 }
 
+// Filtro activo por tipo de aislamiento
+let activeFilterMed = 'todos';
+
+function setFilter(btn, ctx) {
+    // Marcar chip activo
+    qs(`#filter-chips-${ctx}`).querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilterMed = btn.dataset.filter;
+    // Volver a renderizar con el nuevo filtro
+    const q = qs('#search-med').value.trim();
+    renderMedFiltered(q);
+}
+
+function renderMedFiltered(q) {
+    let data = allPathogens.slice();
+    // Filtrar por texto
+    if (q) {
+        data = data.filter(p => p.nombre_cientifico.toLowerCase().includes(q.toLowerCase()));
+    }
+    // Filtrar por tipo de aislamiento
+    if (activeFilterMed !== 'todos') {
+        data = data.filter(p => {
+            const nombre = (p.tipo_aislamiento?.nombre || 'Estándar').toLowerCase();
+            return nombre.includes(activeFilterMed.toLowerCase());
+        });
+    }
+    renderMedResults(data);
+    // Mostrar/ocultar hint
+    hide(qs('#med-hint'));
+    show(qs('#med-results'));
+}
+
 // ════════════════════════════════════════════
 //  VISTA MÉDICO
 // ════════════════════════════════════════════
@@ -312,16 +344,23 @@ function resetMed() {
 qs('#search-med').addEventListener('input', debounce(e => {
     const q = e.target.value.trim();
     q ? show(qs('#clear-med')) : hide(qs('#clear-med'));
-    fetchAndRender('medical', q); // Buscamos (si está vacío trae todos)
+    renderMedFiltered(q);
 }, 280));
 
 function clearSearch(ctx) {
     qs(`#search-${ctx}`).value = '';
     hide(qs(`#clear-${ctx}`));
-    hide(qs(`#${ctx}-hint`));
-    show(qs(`#${ctx}-results`));
-    hide(qs(`#${ctx}-empty`));
-    fetchAndRender(ctx, ''); // Volver a listar todos
+    if (ctx === 'med') {
+        activeFilterMed = 'todos';
+        qs('#filter-chips-med')?.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        qs('#filter-chips-med')?.querySelector('[data-filter="todos"]')?.classList.add('active');
+        renderMedFiltered('');
+    } else {
+        hide(qs(`#${ctx}-hint`));
+        show(qs(`#${ctx}-results`));
+        hide(qs(`#${ctx}-empty`));
+        fetchAndRender(ctx, '');
+    }
 }
 
 function renderMedResults(data) {

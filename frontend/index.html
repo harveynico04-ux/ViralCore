@@ -100,10 +100,18 @@
                     <input id="search-med" type="text" placeholder="Buscar patógeno..." autocomplete="off">
                     <button class="clear-btn hidden" id="clear-med" onclick="clearSearch('med')">✕</button>
                 </div>
+                <!-- Filtros por tipo de aislamiento -->
+                <div class="filter-chips" id="filter-chips-med">
+                    <button class="filter-chip active" data-filter="todos" onclick="setFilter(this, 'med')">Todos</button>
+                    <button class="filter-chip contacto" data-filter="contacto" onclick="setFilter(this, 'med')">Contacto</button>
+                    <button class="filter-chip gotas" data-filter="gotas" onclick="setFilter(this, 'med')">Gotas</button>
+                    <button class="filter-chip aereo" data-filter="aéreo" onclick="setFilter(this, 'med')">Aéreo</button>
+                    <button class="filter-chip estandar" data-filter="estándar" onclick="setFilter(this, 'med')">Estándar</button>
+                </div>
             </div>
             <div id="med-hint" class="hint-state">
                 <div class="hint-icon">🔬</div>
-                <p>Escribí el nombre del patógeno para buscar</p>
+                <p>Buscá por nombre o filtrá por tipo de aislamiento</p>
             </div>
             <div id="med-results" class="results-list hidden"></div>
             <div id="med-empty" class="empty-state hidden">
