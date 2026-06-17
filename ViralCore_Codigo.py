@@ -5,25 +5,29 @@ from bson import ObjectId
 import sys
 import os
 from dotenv import load_dotenv
-import google.generativeai as genai
+from openai import OpenAI
 import pdfplumber
 import json
 
 # Cargar variables de entorno
 load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-gemini_client = None
-if GEMINI_API_KEY and GEMINI_API_KEY != "INGRESA_TU_API_KEY_AQUI":
-    genai.configure(api_key=GEMINI_API_KEY)
-    gemini_client = True  # Flag para indicar que está configurado
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# Modelo asignado por la cátedra (Universidad Austral - Ciencia de Datos para la Medicina)
-MODEL_NAME = "gemini-2.5-flash-lite-preview-06-17"
-GEN_CONFIG = {"temperature": 0.0, "max_output_tokens": 800}
+# Inicializar cliente de Groq (API compatible con OpenAI)
+groq_client = None
+if GROQ_API_KEY and GROQ_API_KEY != "INGRESA_TU_API_KEY_AQUI":
+    try:
+        groq_client = OpenAI(
+            api_key=GROQ_API_KEY,
+            base_url="https://api.groq.com/openai/v1"
+        )
+        print("✅ Cliente Groq inicializado correctamente.")
+    except Exception as e:
+        print(f"⚠️ Error al inicializar Groq: {e}")
 
-# 1. Inicializamos el servidor de Flask
-app = Flask(__name__)
-CORS(app) 
+# Modelo a utilizar (Llama 3.3 70B - comparable a GPT-4, 100% gratuito)
+MODEL_NAME = "llama-3.3-70b-versatile"
+
 
 # 2. Conexión a MongoDB Atlas
 URI_ATLAS = "mongodb+srv://harveynico04_db_user:amoalgoat@cluster0.tdfywti.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
@@ -31,6 +35,7 @@ URI_ATLAS = "mongodb+srv://harveynico04_db_user:amoalgoat@cluster0.tdfywti.mongo
 try:
     cliente = MongoClient(URI_ATLAS)
     cliente.admin.command('ping')
+    print("✅ Conectado a MongoDB Atlas.")
 except Exception as e:
     print("❌ Error conectando a MongoDB:", e)
     sys.exit(1)
@@ -45,7 +50,6 @@ coleccion_patogenos = db['patogenos']
 def login_admin():
     datos = request.json
     password = datos.get('password')
-    # Clave simple según requerimiento
     if password == '6767':
         return jsonify({"success": True, "token": "admin-token-777"}), 200
     else:
@@ -63,7 +67,7 @@ def buscar_patogenos():
     
     patogenos = []
     for p in resultados:
-        p['_id'] = str(p['_id']) 
+        p['_id'] = str(p['_id'])
         patogenos.append(p)
         
     return jsonify(patogenos)
@@ -72,7 +76,6 @@ def buscar_patogenos():
 @app.route('/api/patogenos', methods=['POST'])
 def agregar_patogeno():
     nuevo_patogeno = request.json
-    # Se inserta en MongoDB
     resultado = coleccion_patogenos.insert_one(nuevo_patogeno)
     nuevo_patogeno['_id'] = str(resultado.inserted_id)
     return jsonify({"success": True, "data": nuevo_patogeno}), 201
@@ -94,7 +97,7 @@ def eliminar_patogeno(id_patogeno):
 def editar_patogeno(id_patogeno):
     try:
         datos = request.json
-        datos.pop('_id', None)  # Nunca actualizamos el _id
+        datos.pop('_id', None)
         resultado = coleccion_patogenos.update_one(
             {"_id": ObjectId(id_patogeno)},
             {"$set": datos}
@@ -106,48 +109,62 @@ def editar_patogeno(id_patogeno):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 400
 
-# 6. Chatbot con IA
+# 6. Chatbot con IA (Llama 3.3 70B via Groq - Gratuito)
 @app.route('/api/chat', methods=['POST'])
 def chat_ai():
     try:
         datos = request.json
-        mensaje_usuario = datos.get('mensaje')
-        
-        if not gemini_client:
-            return jsonify({"success": False, "respuesta": "Error: La API Key de Gemini no está configurada en el servidor."}), 500
+        mensaje_usuario = datos.get('mensaje', '').strip()
 
-        # Obtener patógenos de la base de datos para darle contexto al LLM
+        if not mensaje_usuario:
+            return jsonify({"success": False, "respuesta": "No se recibió ningún mensaje."}), 400
+
+        if not groq_client:
+            return jsonify({"success": False, "respuesta": "Error: La API Key de Groq no está configurada en el servidor."}), 500
+
+        # Obtener todos los patógenos para dar contexto a la IA
         todos_patogenos = list(coleccion_patogenos.find({}, {"_id": 0}))
-        
-        contexto_viralcore = "Eres el Asistente Experto en Bioseguridad de ViralCore. "
-        contexto_viralcore += "Tu objetivo es responder de forma clara, profesional y directa preguntas sobre protocolos de aislamiento hospitalario, uso de Equipo de Protección Personal (EPP), manejo de residuos, y supervivencia de patógenos en superficies. "
-        contexto_viralcore += "DEBES basar tus respuestas ESTRICTAMENTE en la base de datos de ViralCore que te proveo a continuación. "
-        contexto_viralcore += "Si el usuario pregunta algo general, dale el paso a paso. Si pregunta sobre un patógeno específico, dale la información exacta (EPP, Cartel, etc.). "
-        contexto_viralcore += "No inventes información externa. Si no sabes algo o no está en la base de datos, dilo claramente. Usa un tono amigable pero muy profesional.\n\n"
-        contexto_viralcore += f"Base de datos actual de ViralCore:\n{str(todos_patogenos)}\n\n"
-        
-        prompt = contexto_viralcore + f"Pregunta del usuario: {mensaje_usuario}\nRespuesta:"
-        
-        model = genai.GenerativeModel(MODEL_NAME)
-        response = model.generate_content(prompt, generation_config=GEN_CONFIG)
-        
-        return jsonify({"success": True, "respuesta": response.text})
+
+        system_prompt = (
+            "Eres el Asistente Experto en Bioseguridad de ViralCore, una aplicación médica profesional. "
+            "Respondés preguntas sobre protocolos de aislamiento hospitalario, Equipo de Protección Personal (EPP), "
+            "manejo de residuos patológicos, y supervivencia de microorganismos en superficies. "
+            "REGLA DE ORO: Basá TODAS tus respuestas en la base de datos de ViralCore que se te provee. "
+            "Si el usuario pregunta sobre un patógeno que está en la base de datos, citá información exacta (EPP, cartel de aislamiento, etc.). "
+            "Respondé siempre en español. Usá un tono profesional pero amigable. "
+            "Si la información no está en la base de datos, decilo claramente en lugar de inventar.\n\n"
+            f"BASE DE DATOS DE VIRALCORE:\n{json.dumps(todos_patogenos, ensure_ascii=False, indent=2)}\n"
+        )
+
+        completion = groq_client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": mensaje_usuario}
+            ],
+            temperature=0.3,
+            max_tokens=1500
+        )
+
+        respuesta = completion.choices[0].message.content
+        return jsonify({"success": True, "respuesta": respuesta})
+
     except Exception as e:
         return jsonify({"success": False, "respuesta": f"Error del servidor de IA: {str(e)}"}), 500
 
-# 7. Procesar PDF de Protocolos Locales
+# 7. Procesar PDF de Protocolos Locales (Solo Admin)
 @app.route('/api/upload-pdf', methods=['POST'])
 def upload_pdf():
     try:
         if 'file' not in request.files:
             return jsonify({"success": False, "message": "No se envió ningún archivo PDF."}), 400
-        
+
         file = request.files['file']
         if file.filename == '':
             return jsonify({"success": False, "message": "Nombre de archivo vacío."}), 400
-            
-        if not gemini_client:
-            return jsonify({"success": False, "message": "Error: La API Key de Gemini no está configurada."}), 500
+
+        if not groq_client:
+            return jsonify({"success": False, "message": "Error: La API Key de Groq no está configurada."}), 500
 
         # Extraer texto del PDF
         pdf_text = ""
@@ -156,45 +173,66 @@ def upload_pdf():
                 text = page.extract_text()
                 if text:
                     pdf_text += text + "\n"
-                    
-        # Consultar a Gemini para extraer reglas
-        prompt = "Eres un analista experto en protocolos hospitalarios de control de infecciones. A continuación se presenta el texto extraído de un manual de protocolos local de un hospital en PDF:\n\n"
-        prompt += pdf_text[:15000]
-        prompt += "\n\nAnaliza este documento detalladamente y extrae ÚNICAMENTE las reglas específicas, recomendaciones locales, normativas particulares o diferencias en los protocolos de bioseguridad para distintos microorganismos o tipos de aislamiento (por ejemplo: MRSA, KPC, Clostridium difficile, Tuberculosis, Influenza, Aislamiento por Gotas, Aislamiento de Contacto, etc). "
-        prompt += "Devuelve la respuesta ESTRICTAMENTE en formato JSON válido, que sea un diccionario donde la clave es el nombre del microorganismo y el valor es un arreglo de strings (cada string es una alerta o normativa local).\n"
-        prompt += "No incluyas texto fuera del JSON. Ejemplo:\n{\n  \"staphylococcus aureus\": [\"En esta institución se usa triple guante para MRSA\"]\n}\n"
 
-        model = genai.GenerativeModel(MODEL_NAME)
-        response = model.generate_content(prompt, generation_config=GEN_CONFIG)
-        
-        # Limpiar posible formato Markdown del output (```json ... ```)
-        respuesta_texto = response.text.replace('```json', '').replace('```', '').strip()
+        if not pdf_text.strip():
+            return jsonify({"success": False, "message": "No se pudo extraer texto del PDF. Asegurate de que no sea un PDF escaneado."}), 400
+
+        system_msg = "Eres un analista experto en protocolos hospitalarios de control de infecciones. Tu única tarea es analizar documentos y devolver JSON puro sin texto adicional."
+
+        user_msg = (
+            f"Analiza el siguiente texto extraído de un manual de protocolos hospitalarios:\n\n{pdf_text[:12000]}\n\n"
+            "Extraé ÚNICAMENTE las reglas específicas, recomendaciones locales o normativas particulares para distintos microorganismos "
+            "(ej: MRSA, KPC, Clostridium difficile, Tuberculosis, Influenza, etc.).\n\n"
+            "Devolvé SOLO un JSON válido. El formato debe ser un diccionario donde la clave es el nombre del microorganismo "
+            "en minúsculas y el valor es una lista de strings con las alertas.\n"
+            'Ejemplo: {"staphylococcus aureus": ["Usar triple guante para MRSA"], "mycobacterium tuberculosis": ["Presión negativa obligatoria"]}'
+        )
+
+        completion = groq_client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": user_msg}
+            ],
+            temperature=0.0,
+            max_tokens=2000
+        )
+
+        respuesta_texto = completion.choices[0].message.content.strip()
+        # Limpiar posible formato Markdown del output
+        if respuesta_texto.startswith("```"):
+            respuesta_texto = respuesta_texto.split("```")[1]
+            if respuesta_texto.startswith("json"):
+                respuesta_texto = respuesta_texto[4:]
+        respuesta_texto = respuesta_texto.strip()
+
         alertas = json.loads(respuesta_texto)
-        
+
         # Actualizar los patógenos en MongoDB con las alertas locales
         patogenos_modificados = 0
         for nombre_patogeno, lista_alertas in alertas.items():
-            # Buscar patógenos cuyo nombre contenga el nombre extraído
             resultado = coleccion_patogenos.update_many(
                 {"nombre_cientifico": {"$regex": nombre_patogeno, "$options": "i"}},
                 {"$set": {"alertas_locales": lista_alertas}}
             )
             patogenos_modificados += resultado.modified_count
-            
+
         return jsonify({
-            "success": True, 
-            "message": f"PDF procesado correctamente por la IA. Se actualizaron las normativas de {patogenos_modificados} patógenos.", 
+            "success": True,
+            "message": f"PDF procesado correctamente. Se actualizaron {patogenos_modificados} patógenos con normativa local.",
             "alertas": alertas
         })
-    except json.JSONDecodeError:
-        return jsonify({"success": False, "message": "Error: La IA no devolvió el formato JSON correctamente."}), 500
+
+    except json.JSONDecodeError as e:
+        return jsonify({"success": False, "message": f"La IA no devolvió JSON válido. Intentá con otro PDF."}), 500
     except Exception as e:
         return jsonify({"success": False, "message": f"Error procesando PDF: {str(e)}"}), 500
+
 # Punto de inicio
 if __name__ == '__main__':
     print("\n" + "="*50)
     print("✅ ¡El servidor de ViralCore v2 está encendido!")
-    print("🌐 Tu URL (API_URL) es: http://127.0.0.1:5000/api/patogenos")
-    print("🛑 Presioná CTRL+C en esta consola para apagarlo.")
+    print("🌐 URL local: http://127.0.0.1:5000/api/patogenos")
+    print("🛑 Presioná CTRL+C para apagarlo.")
     print("="*50 + "\n")
     app.run(debug=True, port=5000)
