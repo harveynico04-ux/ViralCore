@@ -7,3 +7,4 @@ openai
 pdfplumber
 python-dotenv
 werkzeug
+openpyxl

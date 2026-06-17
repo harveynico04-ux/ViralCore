@@ -270,6 +270,49 @@ function goTo(view) {
     }
 }
 
+// ─── API fetch central (con Caché Offline) ──────────────
+async function fetchAndRender(ctx, query = '') {
+    const CACHE_KEY = 'viralcore_pathogens_cache';
+    const CACHE_TIME_KEY = 'viralcore_pathogens_time';
+    const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 horas
+
+    let data = null;
+    let isOffline = false;
+
+    try {
+        const res  = await fetch(`${API}/patogenos?q=${encodeURIComponent(query)}`);
+        if (!res.ok) throw new Error('Servidor respondió con error');
+        data = await res.json();
+        
+        // Guardar en caché local
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+        
+        hide(qs('#offline-banner'));
+    } catch (e) {
+        console.warn('Cargando desde caché offline...', e);
+        isOffline = true;
+        
+        const cachedData = localStorage.getItem(CACHE_KEY);
+        if (cachedData) {
+            data = JSON.parse(cachedData);
+            if (query) {
+                data = data.filter(p => p.nombre_cientifico.toLowerCase().includes(query.toLowerCase()));
+            }
+            show(qs('#offline-banner'));
+        } else {
+            console.error('No hay caché local disponible');
+            data = [];
+            show(qs('#offline-banner'));
+        }
+    }
+
+    allPathogens = sortPathogens(data);
+    if (ctx === 'medical') renderMedResults(allPathogens);
+    if (ctx === 'family')  renderFamResults(allPathogens);
+    if (ctx === 'admin')   renderAdminList(allPathogens);
+}
+
 function handleBack() {
     if (topView === 'medical' && medState === 'detail') { closeMedDetail(); return; }
     if (topView === 'family'  && famState === 'detail') { closeFamDetail(); return; }
@@ -536,6 +579,11 @@ function openMedDetail(id) {
                 </span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
+            
+            <button class="btn-qr" onclick="openQRModal('${item._id}', '${item.nombre_cientifico}')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg>
+                Generar Código QR
+            </button>
 
             <div class="prof-grid">
                 ${alertasLocalesHTML}
@@ -610,6 +658,45 @@ function openCriticalModal() {
             <span>${w}</span>
         </div>`).join('');
     show(qs('#modal-critical'));
+}
+
+// ════════════════════════════════════════════
+//  CÓDIGO QR LOGICA
+// ════════════════════════════════════════════
+let qrcodeInstance = null;
+
+function openQRModal(id, nombre) {
+    qs('#qr-pathogen-name').textContent = nombre;
+    const canvasContainer = qs('#qr-canvas');
+    canvasContainer.innerHTML = ''; // Limpiar anterior
+    
+    // La URL de destino (detectada en carga inicial)
+    const url = window.location.origin + window.location.pathname + '?id=' + id;
+    
+    qrcodeInstance = new QRCode(canvasContainer, {
+        text: url,
+        width: 200,
+        height: 200,
+        colorDark : "#0d0f1c",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+    });
+    
+    show(qs('#modal-qr'));
+}
+
+function closeQRModal() {
+    hide(qs('#modal-qr'));
+}
+
+function downloadQR() {
+    const canvas = qs('#qr-canvas').querySelector('canvas');
+    if (!canvas) return;
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `QR_${qs('#qr-pathogen-name').textContent.replace(/\s+/g, '_')}.png`;
+    a.click();
 }
 
 // ════════════════════════════════════════════
@@ -1270,6 +1357,201 @@ async function uploadLocalProtocol() {
             status.style.color = 'green';
             status.textContent = data.message;
             // Refrescar lista de patógenos para aplicar las alertas locales
+            <div style="grid-column: 1 / -1;">
+                ${renderSection(
+                    'RECOMENDACIONES PARA VISITAS Y FAMILIARES',
+                    visitas,
+                    '#8b5cf6', '#f5f3ff'
+                )}
+            </div>
+        </div>
+    `;
+    resBox.scrollIntoView({ behavior: 'smooth' });
+}
+
+
+// ════════════════════════════════════════════
+//  CARTELES DE AISLAMIENTO IMPRIMIBLES
+// ════════════════════════════════════════════
+function initCarteles() {
+    const container = qs('#view-carteles');
+    container.innerHTML = `
+        <div style="padding: 1.5rem 1rem;">
+            <div class="family-welcome" style="padding: 0 0 1rem 0;">
+                <h2>Carteles de Aislamiento para Imprimir</h2>
+                <p>Seleccioná el germen de la base de datos para generar instantáneamente el cartel oficial listo para colocar en la puerta de la habitación.</p>
+            </div>
+
+            <div class="section-card" style="padding: 1.25rem; margin-bottom:1.5rem;">
+                <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                    <label style="font-size:0.85rem; font-weight:600; color:var(--text-2);">Seleccionar Patógeno</label>
+                    <select id="select-cartel-patogeno" class="pin-input" style="font-size:0.95rem; text-align:left; letter-spacing:normal; padding:0.75rem; margin:0;" onchange="renderCartelPreview(this.value)">
+                        <option value="">-- Elegí un germen --</option>
+                        ${allPathogens.map(p => `<option value="${p._id}">${p.nombre_cientifico} (${p.tipo_aislamiento?.nombre || 'Estándar'})</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+
+            <div id="cartel-preview-area" class="hidden"></div>
+        </div>
+    `;
+}
+
+function renderCartelPreview(id) {
+    const area = qs('#cartel-preview-area');
+    if (!id) { hide(area); return; }
+
+    const item = allPathogens.find(p => p._id === id);
+    if (!item) return;
+
+    show(area);
+    const color = getColor(item.tipo_aislamiento?.color_cartel);
+    const isoName = item.tipo_aislamiento?.nombre || 'ESTÁNDAR';
+
+    let iconoColor = '\u26a0\ufe0f';
+    let advertencias = ['Lavado de manos clínico antes y después del contacto.'];
+
+    if (color === 'verde') {
+        iconoColor = '\ud83d\udca7';
+        advertencias = [
+            'Uso obligatorio de Barbijo Quirúrgico al ingresar a la habitación.',
+            'Mantener distancia mínima de 1 metro entre pacientes.',
+            'Higiene de manos estricta antes y después de ingresar.'
+        ];
+    } else if (color === 'azul') {
+        iconoColor = '\ud83c\udf2c\ufe0f';
+        advertencias = [
+            'Uso obligatorio de Barbijo N95 antes de ingresar.',
+            'Mantener la puerta de la habitación permanentemente cerrada.',
+            'Habitación con presión negativa y ventanas cerradas.'
+        ];
+    } else if (color === 'amarillo') {
+        iconoColor = '\u26a0\ufe0f';
+        advertencias = [
+            'Uso obligatorio de Camisolín y Guantes al tomar contacto.',
+            'Desinfectar estetoscopio, termómetro y superficies entre usos.',
+            'Desechar el EPP dentro de la habitación al salir.'
+        ];
+    }
+
+    area.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+            <span style="font-size:0.8rem; font-weight:600; color:var(--text-3);">Previsualización del Cartel</span>
+            <button class="btn-add" onclick="window.print()" style="padding:0.4rem 1rem; font-size:0.82rem; background:var(--accent);">Imprimir Cartel</button>
+        </div>
+
+        <div class="cartel-print-box ${color}" style="background:var(--surface); border:6px solid; border-radius:16px; padding:2rem; text-align:center; box-shadow:var(--sh-md);">
+            <div style="font-size:1.1rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:1rem;">PRECAUCIONES DE AISLAMIENTO</div>
+            <div style="font-size:4.5rem; line-height:1; margin-bottom:1rem;">${iconoColor}</div>
+            <div style="font-size:2.2rem; font-weight:900; letter-spacing:-1px; text-transform:uppercase; margin-bottom:0.5rem; line-height:1.1;">${isoName}</div>
+            <div style="font-size:1.15rem; font-weight:700; border-top:2px solid; border-bottom:2px solid; padding:0.5rem; margin:1rem 0;">
+                PACIENTE CON: <span style="font-style:italic;">${item.nombre_cientifico}</span>
+            </div>
+            <div style="text-align:left; margin-top:1.5rem;">
+                <div style="font-size:0.85rem; font-weight:800; text-transform:uppercase; margin-bottom:0.5rem; letter-spacing:0.05em;">MEDIDAS OBLIGATORIAS:</div>
+                <ul style="padding-left:1.25rem; font-size:0.95rem; line-height:1.5; font-weight:600; display:flex; flex-direction:column; gap:0.5rem;">
+                    ${advertencias.map(adv => `<li>${adv}</li>`).join('')}
+                </ul>
+            </div>
+            <div style="margin-top:2rem; font-size:0.75rem; font-weight:700; opacity:0.6;">ViralCore v2.0</div>
+        </div>
+    `;
+    area.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ════════════════════════════════════════════
+//  CHATBOT DE IA
+// ════════════════════════════════════════════
+let chatOpen = false;
+
+function toggleChat() {
+    const window = qs('#chatbot-window');
+    const fab = qs('#chatbot-fab');
+    if (chatOpen) {
+        window.classList.add('hidden');
+        fab.style.transform = 'scale(1)';
+    } else {
+        window.classList.remove('hidden');
+        fab.style.transform = 'scale(0)';
+    }
+    chatOpen = !chatOpen;
+}
+
+async function sendChatMessage() {
+    const input = qs('#chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    appendMessage('user', text);
+    input.value = '';
+
+    const typingId = appendMessage('bot', 'Escribiendo...');
+
+    try {
+        const res = await fetch(`${API}/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mensaje: text })
+        });
+        const data = await res.json();
+        
+        const msgEl = document.getElementById(typingId);
+        if (data.success) {
+            msgEl.querySelector('.msg-bubble').innerHTML = data.respuesta.replace(/\n/g, '<br>');
+        } else {
+            msgEl.querySelector('.msg-bubble').textContent = data.respuesta || "Lo siento, hubo un error de conexión con la IA.";
+        }
+    } catch (e) {
+        document.getElementById(typingId).querySelector('.msg-bubble').textContent = "Error de red al conectar con el asistente.";
+    }
+}
+
+function appendMessage(sender, text) {
+    const container = qs('#chat-messages');
+    const id = 'msg-' + Date.now();
+    const html = `
+        <div class="chat-msg ${sender}" id="${id}">
+            <div class="msg-bubble">${text}</div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+    container.scrollTop = container.scrollHeight;
+    return id;
+}
+
+// ════════════════════════════════════════════
+//  SUBIDA DE PDF PROTOCOLOS
+// ════════════════════════════════════════════
+async function uploadLocalProtocol() {
+    const fileInput = qs('#admin-pdf-upload');
+    const status = qs('#pdf-upload-status');
+    const file = fileInput.files[0];
+
+    if (!file) {
+        status.style.display = 'block';
+        status.style.color = 'red';
+        status.textContent = 'Seleccioná un archivo PDF primero.';
+        return;
+    }
+
+    status.style.display = 'block';
+    status.style.color = 'var(--text-2)';
+    status.textContent = 'Procesando PDF con IA. Esto puede tardar varios segundos...';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const res = await fetch(`${API}/upload-pdf`, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            status.style.color = 'green';
+            status.textContent = data.message;
+            // Refrescar lista de patógenos para aplicar las alertas locales
             fetchAndRender('admin');
         } else {
             status.style.color = 'red';
@@ -1280,3 +1562,100 @@ async function uploadLocalProtocol() {
         status.textContent = 'Error de conexión al subir el PDF.';
     }
 }
+
+// ════════════════════════════════════════════
+//  IMPORTAR / EXPORTAR EXCEL
+// ════════════════════════════════════════════
+
+function exportarExcel() {
+    if (!allPathogens || allPathogens.length === 0) {
+        alert("No hay datos para exportar");
+        return;
+    }
+    
+    // Transformar los datos de JSON a un array plano para el Excel
+    const dataRow = allPathogens.map(p => {
+        return {
+            "Nombre Científico": p.nombre_cientifico,
+            "Grupo": p.clasificacion?.grupo_principal || "",
+            "Subcategoría": p.clasificacion?.subcategoria || "",
+            "Aislamiento (Nombre)": p.tipo_aislamiento?.nombre || "Estándar",
+            "Aislamiento (Color)": p.tipo_aislamiento?.color_cartel || "Gris",
+            "Aislamiento (Descripción)": p.tipo_aislamiento?.descripcion_al_clic || "",
+            "Advertencias Críticas": (p.tipo_aislamiento?.advertencias_criticas || []).join(" | "),
+            "Mecanismos Infección": (p.mecanismos_infeccion || []).join(" | "),
+            "Mecanismos Resistencia": (p.mecanismos_resistencia || []).join(" | "),
+            "EPP Requerido": (p.epp_requerido || []).join(" | "),
+            "Instrucciones Familia": p.instrucciones_familia || "",
+            "Disposición Sala": p.disposicion_sala || "",
+            "Manejo Residuos": p.manejo_residuos_ropa?.basura || ""
+        };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataRow);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Patógenos");
+    
+    XLSX.writeFile(workbook, "ViralCore_BaseDatos.xlsx");
+}
+
+async function importarExcel(inputEl) {
+    const file = inputEl.files[0];
+    if (!file) return;
+    
+    const statusEl = qs('#excel-status');
+    show(statusEl);
+    statusEl.className = 'excel-status';
+    statusEl.textContent = 'Subiendo y procesando Excel...';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const res = await fetch(`${API}/import-excel`, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            statusEl.classList.add('success');
+            statusEl.textContent = `¡Éxito! ${data.message}`;
+            fetchAndRender('admin'); // Recargar datos
+        } else {
+            statusEl.classList.add('error');
+            statusEl.textContent = `Error: ${data.message}`;
+        }
+    } catch (e) {
+        statusEl.classList.add('error');
+        statusEl.textContent = 'Error de red al subir el Excel.';
+    }
+    
+    inputEl.value = ''; // Resetear input
+}
+
+// ════════════════════════════════════════════
+//  INICIALIZACIÓN (On Load)
+// ════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', async () => {
+    // Si hay ?id en la URL, significa que es un escaneo de código QR
+    const urlParams = new URLSearchParams(window.location.search);
+    const qrId = urlParams.get('id');
+
+    if (qrId) {
+        // Modo escaneo QR: Cargar directo la ficha técnica médica del patógeno
+        topView = 'medical';
+        medState = 'detail';
+        qs('#btn-prof').classList.add('active');
+        hide(qs('#view-landing'));
+        show(qs('#view-medical'));
+        show(qs('#btn-back'));
+        qs('#app-bar-title').textContent = 'Ficha Médica';
+        
+        // Fetch de los datos
+        await fetchAndRender('medical', '');
+        
+        // Abrir la ficha correspondiente
+        openMedDetail(qrId);
+    }
+});

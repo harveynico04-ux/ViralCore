@@ -7,8 +7,18 @@
     <title>ViralCore</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- QR Code generator -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- SheetJS para Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
+
+<!-- ═══ BANNER OFFLINE ═══ -->
+<div id="offline-banner" class="offline-banner hidden">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+    Modo sin conexión — mostrando datos guardados localmente
+</div>
 
 <!-- ═══ APP BAR ═══ -->
 <header class="app-bar">
@@ -166,11 +176,23 @@
     <section id="view-admin" class="view hidden">
         <div class="admin-toolbar">
             <span class="admin-count" id="admin-count">0 patógenos</span>
-            <button class="btn-add" onclick="openFormModal(null)">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Agregar
-            </button>
+            <div style="display:flex; gap:0.5rem;">
+                <button class="btn-excel" id="btn-export-excel" onclick="exportarExcel()" title="Exportar base de datos a Excel">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Exportar
+                </button>
+                <label class="btn-excel btn-excel-import" title="Importar desde Excel">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Importar
+                    <input type="file" id="excel-import-input" accept=".xlsx,.xls" style="display:none" onchange="importarExcel(this)">
+                </label>
+                <button class="btn-add" onclick="openFormModal(null)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Agregar
+                </button>
+            </div>
         </div>
+        <div id="excel-status" class="excel-status hidden"></div>
         <div class="admin-toolbar" style="margin-top: 1rem; flex-direction: column; align-items: stretch; gap: 0.5rem; background: #fff; padding: 1rem; border-radius: var(--r-md); border: 1px solid var(--border);">
             <h3 style="font-size:0.9rem; font-weight:600; color:var(--text-1); margin:0;">Subir Protocolo Local (PDF)</h3>
             <p style="font-size:0.8rem; color:var(--text-3); margin-bottom: 0.5rem;">La IA extraerá las normativas específicas y las agregará a los patógenos.</p>
@@ -329,6 +351,25 @@
         <button onclick="sendChatMessage()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
+    </div>
+</div>
+
+<!-- Modal QR -->
+<div id="modal-qr" class="qr-overlay hidden" onclick="closeQRModal()">
+    <div class="qr-card" onclick="event.stopPropagation()">
+        <div class="qr-card-header">
+            <div>
+                <div class="qr-title" id="qr-pathogen-name">Nombre del Patógeno</div>
+                <div class="qr-subtitle">Escaneá para abrir la ficha técnica</div>
+            </div>
+            <button class="qr-close" onclick="closeQRModal()">✕</button>
+        </div>
+        <div id="qr-canvas" class="qr-canvas"></div>
+        <div class="qr-actions">
+            <button class="btn-qr-download" onclick="downloadQR()">Descargar PNG</button>
+            <button class="btn-qr-secondary" onclick="closeQRModal()">Cerrar</button>
+        </div>
+        <p class="qr-hint">Pegá este código en la puerta de la habitación del paciente</p>
     </div>
 </div>
 

@@ -1398,3 +1398,181 @@ p, .info-text, .family-care-text, .family-tip-box p,
     justify-content: center;
     cursor: pointer;
 }
+
+/* ════════════════════════════
+   BANNER OFFLINE
+════════════════════════════ */
+.offline-banner {
+    background-color: #fbbf24; /* amber-400 */
+    color: #92400e; /* amber-900 */
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    z-index: 999;
+}
+
+/* ════════════════════════════
+   EXCEL BUTTONS
+════════════════════════════ */
+.btn-excel {
+    background: #10b981; /* Emerald-500 */
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--r-md);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+}
+.btn-excel:hover {
+    background: #059669; /* Emerald-600 */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+.btn-excel-import {
+    background: #3b82f6; /* Blue-500 */
+}
+.btn-excel-import:hover {
+    background: #2563eb; /* Blue-600 */
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+.excel-status {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    border-radius: var(--r-sm);
+    font-size: 0.8rem;
+    text-align: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+}
+.excel-status.success {
+    color: #047857;
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+}
+.excel-status.error {
+    color: #b91c1c;
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+/* ════════════════════════════
+   QR MODAL
+════════════════════════════ */
+.btn-qr {
+    background: var(--surface-2, #f1f5f9);
+    color: var(--text-1);
+    border: 1px solid var(--border);
+    padding: 0.5rem 1rem;
+    border-radius: var(--r-md);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1rem;
+    width: 100%;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+.btn-qr:hover {
+    background: #e2e8f0;
+}
+
+.qr-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.qr-card {
+    background: var(--surface);
+    border-radius: var(--r-lg);
+    width: 100%;
+    max-width: 320px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    text-align: center;
+}
+.qr-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    text-align: left;
+}
+.qr-title {
+    font-weight: 700;
+    color: var(--text-1);
+    font-size: 1.1rem;
+    margin-bottom: 0.2rem;
+}
+.qr-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-3);
+}
+.qr-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--text-3);
+    cursor: pointer;
+}
+.qr-canvas {
+    background: white;
+    padding: 1rem;
+    border-radius: var(--r-md);
+    border: 1px solid var(--border);
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+.qr-canvas img {
+    max-width: 100%;
+    display: block;
+}
+.qr-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.btn-qr-download {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 0.6rem;
+    border-radius: var(--r-md);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+.btn-qr-secondary {
+    background: transparent;
+    color: var(--text-2);
+    border: 1px solid var(--border);
+    padding: 0.6rem;
+    border-radius: var(--r-md);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+.qr-hint {
+    margin-top: 1rem;
+    font-size: 0.75rem;
+    color: var(--text-3);
+}

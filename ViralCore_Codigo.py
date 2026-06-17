@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import pdfplumber
 import json
+import openpyxl
 
 # Cargar variables de entorno
 load_dotenv()
@@ -230,6 +231,87 @@ def upload_pdf():
         return jsonify({"success": False, "message": f"La IA no devolvió JSON válido. Intentá con otro PDF."}), 500
     except Exception as e:
         return jsonify({"success": False, "message": f"Error procesando PDF: {str(e)}"}), 500
+
+# 8. Importar Excel (Admin)
+@app.route('/api/import-excel', methods=['POST'])
+def import_excel():
+    try:
+        if 'file' not in request.files:
+            return jsonify({"success": False, "message": "No se envió ningún archivo Excel."}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"success": False, "message": "Nombre de archivo vacío."}), 400
+
+        wb = openpyxl.load_workbook(file, data_only=True)
+        sheet = wb.active
+
+        # Leer encabezados de la fila 1
+        headers = [cell.value for cell in sheet[1]]
+        
+        patogenos_procesados = 0
+        patogenos_nuevos = 0
+        patogenos_actualizados = 0
+
+        # Iterar a partir de la fila 2
+        for row in sheet.iter_rows(min_row=2, values_only=True):
+            if not row[0]: # Si no hay nombre científico, omitir
+                continue
+                
+            # Crear diccionario usando mapeo manual a partir de headers
+            # Aseguramos que existan las columnas, si no, texto vacío
+            def get_val(header_name):
+                try:
+                    idx = headers.index(header_name)
+                    return str(row[idx]) if row[idx] is not None else ""
+                except ValueError:
+                    return ""
+
+            nombre_cientifico = get_val("Nombre Científico")
+            
+            patogeno_data = {
+                "nombre_cientifico": nombre_cientifico,
+                "clasificacion": {
+                    "grupo_principal": get_val("Grupo"),
+                    "subcategoria": get_val("Subcategoría")
+                },
+                "tipo_aislamiento": {
+                    "nombre": get_val("Aislamiento (Nombre)"),
+                    "color_cartel": get_val("Aislamiento (Color)"),
+                    "descripcion_al_clic": get_val("Aislamiento (Descripción)"),
+                    "advertencias_criticas": [a.strip() for a in get_val("Advertencias Críticas").split("|") if a.strip()]
+                },
+                "epp_requerido": [e.strip() for e in get_val("EPP Requerido").split("|") if e.strip()],
+                "mecanismos_infeccion": [m.strip() for m in get_val("Mecanismos Infección").split("|") if m.strip()],
+                "mecanismos_resistencia": [m.strip() for m in get_val("Mecanismos Resistencia").split("|") if m.strip()],
+                "disposicion_sala": get_val("Disposición Sala"),
+                "manejo_residuos_ropa": {
+                    "basura": get_val("Manejo Residuos")
+                },
+                "instrucciones_familia": get_val("Instrucciones Familia")
+            }
+
+            # Upsert (Actualizar si existe, insertar si no)
+            resultado = coleccion_patogenos.update_one(
+                {"nombre_cientifico": nombre_cientifico},
+                {"$set": patogeno_data},
+                upsert=True
+            )
+            
+            patogenos_procesados += 1
+            if resultado.upserted_id:
+                patogenos_nuevos += 1
+            else:
+                patogenos_actualizados += 1
+
+        return jsonify({
+            "success": True, 
+            "message": f"Excel procesado. Nuevos: {patogenos_nuevos}, Actualizados: {patogenos_actualizados}."
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Error procesando Excel: {str(e)}"}), 500
+
 
 # Punto de inicio
 if __name__ == '__main__':
