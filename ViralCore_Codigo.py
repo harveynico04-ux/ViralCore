@@ -21,13 +21,16 @@ if GROQ_API_KEY and GROQ_API_KEY != "INGRESA_TU_API_KEY_AQUI":
             api_key=GROQ_API_KEY,
             base_url="https://api.groq.com/openai/v1"
         )
-        print("✅ Cliente Groq inicializado correctamente.")
+        print("[OK] Cliente Groq inicializado correctamente.")
     except Exception as e:
-        print(f"⚠️ Error al inicializar Groq: {e}")
+        print(f"[ERROR] Error al inicializar Groq: {e}")
 
 # Modelo a utilizar (Llama 3.3 70B - comparable a GPT-4, 100% gratuito)
 MODEL_NAME = "llama-3.3-70b-versatile"
 
+# 1. Inicializamos el servidor de Flask
+app = Flask(__name__)
+CORS(app)
 
 # 2. Conexión a MongoDB Atlas
 URI_ATLAS = "mongodb+srv://harveynico04_db_user:amoalgoat@cluster0.tdfywti.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
@@ -35,9 +38,9 @@ URI_ATLAS = "mongodb+srv://harveynico04_db_user:amoalgoat@cluster0.tdfywti.mongo
 try:
     cliente = MongoClient(URI_ATLAS)
     cliente.admin.command('ping')
-    print("✅ Conectado a MongoDB Atlas.")
+    print("[OK] Conectado a MongoDB Atlas.")
 except Exception as e:
-    print("❌ Error conectando a MongoDB:", e)
+    print("[ERROR] Error conectando a MongoDB:", e)
     sys.exit(1)
 
 db = cliente['ViraCore_Infecciones']
@@ -231,8 +234,8 @@ def upload_pdf():
 # Punto de inicio
 if __name__ == '__main__':
     print("\n" + "="*50)
-    print("✅ ¡El servidor de ViralCore v2 está encendido!")
-    print("🌐 URL local: http://127.0.0.1:5000/api/patogenos")
-    print("🛑 Presioná CTRL+C para apagarlo.")
+    print("[OK] El servidor de ViralCore v2 esta encendido!")
+    print("URL local: http://127.0.0.1:5000/api/patogenos")
+    print("Presiona CTRL+C para apagarlo.")
     print("="*50 + "\n")
     app.run(debug=True, port=5000)
