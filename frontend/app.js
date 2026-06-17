@@ -654,6 +654,45 @@ function openCriticalModal() {
 }
 
 // ════════════════════════════════════════════
+//  CÓDIGO QR LOGICA
+// ════════════════════════════════════════════
+let qrcodeInstance = null;
+
+function openQRModal(id, nombre) {
+    qs('#qr-pathogen-name').textContent = nombre;
+    const canvasContainer = qs('#qr-canvas');
+    canvasContainer.innerHTML = ''; // Limpiar anterior
+    
+    // La URL de destino (detectada en carga inicial)
+    const url = window.location.origin + window.location.pathname + '?id=' + id;
+    
+    qrcodeInstance = new QRCode(canvasContainer, {
+        text: url,
+        width: 200,
+        height: 200,
+        colorDark : "#0d0f1c",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+    });
+    
+    show(qs('#modal-qr'));
+}
+
+function closeQRModal() {
+    hide(qs('#modal-qr'));
+}
+
+function downloadQR() {
+    const canvas = qs('#qr-canvas').querySelector('canvas');
+    if (!canvas) return;
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `QR_${qs('#qr-pathogen-name').textContent.replace(/\s+/g, '_')}.png`;
+    a.click();
+}
+
+// ════════════════════════════════════════════
 //  VISTA FAMILIA
 // ════════════════════════════════════════════
 function resetFam() {
