@@ -1308,7 +1308,7 @@ async function sendChatMessage() {
 
 function appendMessage(sender, text) {
     const container = qs('#chat-messages');
-    const id = 'msg-' + Date.now();
+    const id = 'msg-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
     const html = `
         <div class="chat-msg ${sender}" id="${id}">
             <div class="msg-bubble">${text}</div>
