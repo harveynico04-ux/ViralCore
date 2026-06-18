@@ -1367,37 +1367,6 @@ async function uploadLocalProtocol() {
 //  IMPORTAR / EXPORTAR EXCEL
 // ════════════════════════════════════════════
 
-function exportarExcel() {
-    if (!allPathogens || allPathogens.length === 0) {
-        alert("No hay datos para exportar");
-        return;
-    }
-    
-    // Transformar los datos de JSON a un array plano para el Excel
-    const dataRow = allPathogens.map(p => {
-        return {
-            "Nombre Científico": p.nombre_cientifico,
-            "Grupo": p.clasificacion?.grupo_principal || "",
-            "Subcategoría": p.clasificacion?.subcategoria || "",
-            "Aislamiento (Nombre)": p.tipo_aislamiento?.nombre || "Estándar",
-            "Aislamiento (Color)": p.tipo_aislamiento?.color_cartel || "Gris",
-            "Aislamiento (Descripción)": p.tipo_aislamiento?.descripcion_al_clic || "",
-            "Advertencias Críticas": (p.tipo_aislamiento?.advertencias_criticas || []).join(" | "),
-            "Mecanismos Infección": (p.mecanismos_infeccion || []).join(" | "),
-            "Mecanismos Resistencia": (p.mecanismos_resistencia || []).join(" | "),
-            "EPP Requerido": (p.epp_requerido || []).join(" | "),
-            "Instrucciones Familia": p.instrucciones_familia || "",
-            "Disposición Sala": p.disposicion_sala || "",
-            "Manejo Residuos": p.manejo_residuos_ropa?.basura || ""
-        };
-    });
-
-    const worksheet = XLSX.utils.json_to_sheet(dataRow);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Patógenos");
-    
-    XLSX.writeFile(workbook, "ViralCore_BaseDatos.xlsx");
-}
 
 async function importarExcel(inputEl) {
     const file = inputEl.files[0];
