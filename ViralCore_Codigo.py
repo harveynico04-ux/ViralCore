@@ -136,7 +136,12 @@ def chat_ai():
             "REGLA DE ORO: Basá TODAS tus respuestas en la base de datos de ViralCore que se te provee. "
             "Si el usuario pregunta sobre un patógeno que está en la base de datos, citá información exacta (EPP, cartel de aislamiento, etc.). "
             "Respondé siempre en español. Usá un tono profesional pero amigable. "
-            "Si la información no está en la base de datos, decilo claramente en lugar de inventar.\n\n"
+            "Si la información no está en la base de datos, decilo claramente en lugar de inventar.\n"
+            "EXTREMADAMENTE IMPORTANTE: Si el usuario hace una pregunta que NO está relacionada "
+            "con medicina, bioseguridad, patógenos, el uso de ViralCore o aislamiento hospitalario "
+            "(por ejemplo, preguntas sobre deportes, política, cocina, programación general, etc.), "
+            "DEBES NEGARTE A RESPONDER de forma cortés indicando que tu único propósito es "
+            "asistir con consultas médicas y de bioseguridad.\n\n"
             f"BASE DE DATOS DE VIRALCORE:\n{json.dumps(todos_patogenos, ensure_ascii=False, indent=2)}\n"
         )
 
