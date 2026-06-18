@@ -26,8 +26,8 @@ if GROQ_API_KEY and GROQ_API_KEY != "INGRESA_TU_API_KEY_AQUI":
     except Exception as e:
         print(f"[ERROR] Error al inicializar Groq: {e}")
 
-# Modelo a utilizar (Llama 3.3 70B - comparable a GPT-4, 100% gratuito)
-MODEL_NAME = "llama-3.3-70b-versatile"
+# Modelo a utilizar (Llama 3.1 8B - más rápido, ligero y con su propio límite de tokens en Groq)
+MODEL_NAME = "llama-3.1-8b-instant"
 
 # 1. Inicializamos el servidor de Flask
 app = Flask(__name__)
@@ -129,6 +129,16 @@ def chat_ai():
         # Obtener todos los patógenos para dar contexto a la IA
         todos_patogenos = list(coleccion_patogenos.find({}, {"_id": 0}))
 
+        # Resumir los datos para no exceder el límite de tokens de Groq (Rate Limit)
+        patogenos_resumidos = []
+        for p in todos_patogenos:
+            patogenos_resumidos.append({
+                "nombre": p.get("nombre_cientifico"),
+                "aislamiento": p.get("tipo_aislamiento", {}).get("nombre"),
+                "epp": p.get("epp_requerido"),
+                "resistencia": p.get("mecanismos_resistencia")
+            })
+
         system_prompt = (
             "Eres el Asistente Experto en Bioseguridad de ViralCore, una aplicación médica profesional. "
             "Respondés preguntas sobre protocolos de aislamiento hospitalario, Equipo de Protección Personal (EPP), "
@@ -143,7 +153,7 @@ def chat_ai():
             "(por ejemplo, preguntas sobre deportes, política, cocina, programación general, etc.), "
             "DEBES NEGARTE A RESPONDER de forma cortés indicando que tu único propósito es "
             "asistir con consultas médicas y de bioseguridad.\n\n"
-            f"BASE DE DATOS DE VIRALCORE:\n{json.dumps(todos_patogenos, ensure_ascii=False, indent=2)}\n"
+            f"BASE DE DATOS DE VIRALCORE:\n{json.dumps(patogenos_resumidos, ensure_ascii=False)}\n"
         )
 
         completion = groq_client.chat.completions.create(
