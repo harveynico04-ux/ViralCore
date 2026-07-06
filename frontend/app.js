@@ -358,7 +358,7 @@ function renderMedFiltered(q) {
             return nombre.includes(activeFilterMed.toLowerCase());
         });
     }
-    renderMedResults(data);
+    renderMedResults(data, q);
     // Mostrar/ocultar hint
     hide(qs('#med-hint'));
     show(qs('#med-results'));
@@ -401,10 +401,28 @@ function clearSearch(ctx) {
     }
 }
 
-function renderMedResults(data) {
+function renderMedResults(data, q = '') {
     const list  = qs('#med-results');
     const empty = qs('#med-empty');
-    if (!data.length) { hide(list); show(empty); return; }
+    if (!data.length) { 
+        hide(list); 
+        show(empty); 
+        empty.innerHTML = `
+            <div style="text-align:center; padding: 2rem;">
+                <p style="color:var(--text-2); font-size:1.1rem; margin-bottom:1rem;">No se encontraron resultados para "<strong>${q}</strong>"</p>
+                <p style="color:var(--text-3); font-size:0.9rem;">Por favor, comunícate con el especialista en infecciones para más información:</p>
+                <div style="font-size:1.2rem; font-weight:bold; color:var(--primary); margin-top:0.5rem; letter-spacing:1px;">(xxx) xxxxx xxxxx</div>
+            </div>
+        `;
+        if (q) {
+            fetch(`${API}/busquedas-fallidas`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ termino: q })
+            }).catch(console.error);
+        }
+        return; 
+    }
     show(list); hide(empty);
     list.innerHTML = data.map((item, i) => {
         const color = getColor(item.tipo_aislamiento?.color_cartel);
@@ -420,6 +438,9 @@ function renderMedResults(data) {
 }
 
 function openMedDetail(id) {
+    if (!confirm("ADVERTENCIA: La información a continuación es técnica para profesionales de la salud. Su lectura sin conocimientos médicos puede producir malentendidos. ¿Desea continuar?")) {
+        return;
+    }
     const item = allPathogens.find(p => p._id === id);
     if (!item) return;
     currentPathogen = item;
@@ -1244,9 +1265,6 @@ function renderCartelPreview(id) {
             <div style="font-size:1.1rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:1rem;">PRECAUCIONES DE AISLAMIENTO</div>
             <div style="font-size:4.5rem; line-height:1; margin-bottom:1rem;">${iconoColor}</div>
             <div style="font-size:2.2rem; font-weight:900; letter-spacing:-1px; text-transform:uppercase; margin-bottom:0.5rem; line-height:1.1;">${isoName}</div>
-            <div style="font-size:1.15rem; font-weight:700; border-top:2px solid; border-bottom:2px solid; padding:0.5rem; margin:1rem 0;">
-                PACIENTE CON: <span style="font-style:italic;">${item.nombre_cientifico}</span>
-            </div>
             <div style="text-align:left; margin-top:1.5rem;">
                 <div style="font-size:0.85rem; font-weight:800; text-transform:uppercase; margin-bottom:0.5rem; letter-spacing:0.05em;">MEDIDAS OBLIGATORIAS:</div>
                 <ul style="padding-left:1.25rem; font-size:0.95rem; line-height:1.5; font-weight:600; display:flex; flex-direction:column; gap:0.5rem;">
@@ -1259,65 +1277,7 @@ function renderCartelPreview(id) {
     area.scrollIntoView({ behavior: 'smooth' });
 }
 
-// ════════════════════════════════════════════
-//  CHATBOT DE IA
-// ════════════════════════════════════════════
-let chatOpen = false;
 
-function toggleChat() {
-    const window = qs('#chatbot-window');
-    const fab = qs('#chatbot-fab');
-    if (chatOpen) {
-        window.classList.add('hidden');
-        fab.style.transform = 'scale(1)';
-    } else {
-        window.classList.remove('hidden');
-        fab.style.transform = 'scale(0)';
-    }
-    chatOpen = !chatOpen;
-}
-
-async function sendChatMessage() {
-    const input = qs('#chat-input');
-    const text = input.value.trim();
-    if (!text) return;
-
-    appendMessage('user', text);
-    input.value = '';
-
-    const typingId = appendMessage('bot', 'Escribiendo...');
-
-    try {
-        const res = await fetch(`${API}/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mensaje: text })
-        });
-        const data = await res.json();
-        
-        const msgEl = document.getElementById(typingId);
-        if (data.success) {
-            msgEl.querySelector('.msg-bubble').innerHTML = data.respuesta.replace(/\n/g, '<br>');
-        } else {
-            msgEl.querySelector('.msg-bubble').textContent = data.respuesta || "Lo siento, hubo un error de conexión con la IA.";
-        }
-    } catch (e) {
-        document.getElementById(typingId).querySelector('.msg-bubble').textContent = "Error de red al conectar con el asistente.";
-    }
-}
-
-function appendMessage(sender, text) {
-    const container = qs('#chat-messages');
-    const id = 'msg-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
-    const html = `
-        <div class="chat-msg ${sender}" id="${id}">
-            <div class="msg-bubble">${text}</div>
-        </div>
-    `;
-    container.insertAdjacentHTML('beforeend', html);
-    container.scrollTop = container.scrollHeight;
-    return id;
-}
 
 // ════════════════════════════════════════════
 //  SUBIDA DE PDF PROTOCOLOS
@@ -1363,44 +1323,27 @@ async function uploadLocalProtocol() {
     }
 }
 
-// ════════════════════════════════════════════
-//  IMPORTAR / EXPORTAR EXCEL
-// ════════════════════════════════════════════
-
-
-async function importarExcel(inputEl) {
-    const file = inputEl.files[0];
-    if (!file) return;
-    
-    const statusEl = qs('#excel-status');
-    show(statusEl);
-    statusEl.className = 'excel-status';
-    statusEl.textContent = 'Subiendo y procesando Excel...';
-
-    const formData = new FormData();
-    formData.append('file', file);
-
+async function loadFailedSearches() {
+    const list = qs('#failed-searches-list');
+    if (!list) return;
+    list.innerHTML = 'Cargando...';
     try {
-        const res = await fetch(`${API}/import-excel`, {
-            method: 'POST',
-            body: formData
-        });
+        const res = await fetch(`${API}/busquedas-fallidas`);
         const data = await res.json();
-        
-        if (data.success) {
-            statusEl.classList.add('success');
-            statusEl.textContent = `¡Éxito! ${data.message}`;
-            fetchAndRender('admin'); // Recargar datos
+        if (data.success && data.busquedas.length > 0) {
+            list.innerHTML = data.busquedas.map(b => {
+                const date = new Date(b.fecha).toLocaleString();
+                return `<div style="border-bottom:1px solid var(--border); padding:0.4rem 0;">
+                    <span style="font-weight:600; color:var(--accent);">${b.termino}</span>
+                    <span style="color:var(--text-3); font-size:0.7rem; float:right;">${date}</span>
+                </div>`;
+            }).join('');
         } else {
-            statusEl.classList.add('error');
-            statusEl.textContent = `Error: ${data.message}`;
+            list.innerHTML = '<span style="color:var(--text-3)">No hay búsquedas fallidas registradas.</span>';
         }
     } catch (e) {
-        statusEl.classList.add('error');
-        statusEl.textContent = 'Error de red al subir el Excel.';
+        list.innerHTML = '<span style="color:red">Error al cargar.</span>';
     }
-    
-    inputEl.value = ''; // Resetear input
 }
 
 // ════════════════════════════════════════════

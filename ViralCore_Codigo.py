@@ -46,6 +46,7 @@ except Exception as e:
 
 db = cliente['ViraCore_Infecciones']
 coleccion_patogenos = db['patogenos']
+coleccion_busquedas_fallidas = db['busquedas_fallidas']
 
 # --- RUTAS DE LA API ---
 
@@ -113,64 +114,27 @@ def editar_patogeno(id_patogeno):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 400
 
-# 6. Chatbot con IA (Llama 3.3 70B via Groq - Gratuito)
-@app.route('/api/chat', methods=['POST'])
-def chat_ai():
+# 6. Búsquedas Fallidas
+@app.route('/api/busquedas-fallidas', methods=['POST'])
+def registrar_busqueda_fallida():
+    datos = request.json
+    termino = datos.get('termino', '').strip()
+    if not termino:
+        return jsonify({"success": False}), 400
+    from datetime import datetime
+    coleccion_busquedas_fallidas.insert_one({
+        "termino": termino,
+        "fecha": datetime.utcnow()
+    })
+    return jsonify({"success": True})
+
+@app.route('/api/busquedas-fallidas', methods=['GET'])
+def obtener_busquedas_fallidas():
     try:
-        datos = request.json
-        mensaje_usuario = datos.get('mensaje', '').strip()
-
-        if not mensaje_usuario:
-            return jsonify({"success": False, "respuesta": "No se recibió ningún mensaje."}), 400
-
-        if not groq_client:
-            return jsonify({"success": False, "respuesta": "Error: La API Key de Groq no está configurada en el servidor."}), 500
-
-        # Obtener todos los patógenos para dar contexto a la IA
-        todos_patogenos = list(coleccion_patogenos.find({}, {"_id": 0}))
-
-        # Resumir los datos para no exceder el límite de tokens de Groq (Rate Limit)
-        patogenos_resumidos = []
-        for p in todos_patogenos:
-            patogenos_resumidos.append({
-                "nombre": p.get("nombre_cientifico"),
-                "aislamiento": p.get("tipo_aislamiento", {}).get("nombre"),
-                "epp": p.get("epp_requerido"),
-                "resistencia": p.get("mecanismos_resistencia")
-            })
-
-        system_prompt = (
-            "Eres el Asistente Experto en Bioseguridad de ViralCore, una aplicación médica profesional. "
-            "Respondés preguntas sobre protocolos de aislamiento hospitalario, Equipo de Protección Personal (EPP), "
-            "manejo de residuos patológicos, y supervivencia de microorganismos en superficies. "
-            "REGLA DE ORO: Basá TODAS tus respuestas en la base de datos de ViralCore que se te provee. "
-            "Si el usuario pregunta sobre un patógeno que está en la base de datos, citá información exacta (EPP, cartel de aislamiento, etc.). "
-            "Respondé siempre en español. Usá un tono profesional pero amigable. "
-            "TUS RESPUESTAS DEBEN SER MUY BREVES Y CONCISAS. Los médicos tienen poco tiempo. Ve directo al grano, evita introducciones largas y usa viñetas si es necesario. "
-            "Si la información no está en la base de datos, decilo claramente en lugar de inventar.\n"
-            "EXTREMADAMENTE IMPORTANTE: Si el usuario hace una pregunta que NO está relacionada "
-            "con medicina, bioseguridad, patógenos, el uso de ViralCore o aislamiento hospitalario "
-            "(por ejemplo, preguntas sobre deportes, política, cocina, programación general, etc.), "
-            "DEBES NEGARTE A RESPONDER de forma cortés indicando que tu único propósito es "
-            "asistir con consultas médicas y de bioseguridad.\n\n"
-            f"BASE DE DATOS DE VIRALCORE:\n{json.dumps(patogenos_resumidos, ensure_ascii=False)}\n"
-        )
-
-        completion = groq_client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": mensaje_usuario}
-            ],
-            temperature=0.3,
-            max_tokens=1500
-        )
-
-        respuesta = completion.choices[0].message.content
-        return jsonify({"success": True, "respuesta": respuesta})
-
+        busquedas = list(coleccion_busquedas_fallidas.find({}, {"_id": 0}).sort("fecha", -1))
+        return jsonify({"success": True, "busquedas": busquedas}), 200
     except Exception as e:
-        return jsonify({"success": False, "respuesta": f"Error del servidor de IA: {str(e)}"}), 500
+        return jsonify({"success": False, "message": str(e)}), 500
 
 # 7. Procesar PDF de Protocolos Locales (Solo Admin)
 @app.route('/api/upload-pdf', methods=['POST'])
@@ -248,85 +212,7 @@ def upload_pdf():
     except Exception as e:
         return jsonify({"success": False, "message": f"Error procesando PDF: {str(e)}"}), 500
 
-# 8. Importar Excel (Admin)
-@app.route('/api/import-excel', methods=['POST'])
-def import_excel():
-    try:
-        if 'file' not in request.files:
-            return jsonify({"success": False, "message": "No se envió ningún archivo Excel."}), 400
 
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({"success": False, "message": "Nombre de archivo vacío."}), 400
-
-        wb = openpyxl.load_workbook(file, data_only=True)
-        sheet = wb.active
-
-        # Leer encabezados de la fila 1
-        headers = [cell.value for cell in sheet[1]]
-        
-        patogenos_procesados = 0
-        patogenos_nuevos = 0
-        patogenos_actualizados = 0
-
-        # Iterar a partir de la fila 2
-        for row in sheet.iter_rows(min_row=2, values_only=True):
-            if not row[0]: # Si no hay nombre científico, omitir
-                continue
-                
-            # Crear diccionario usando mapeo manual a partir de headers
-            # Aseguramos que existan las columnas, si no, texto vacío
-            def get_val(header_name):
-                try:
-                    idx = headers.index(header_name)
-                    return str(row[idx]) if row[idx] is not None else ""
-                except ValueError:
-                    return ""
-
-            nombre_cientifico = get_val("Nombre Científico")
-            
-            patogeno_data = {
-                "nombre_cientifico": nombre_cientifico,
-                "clasificacion": {
-                    "grupo_principal": get_val("Grupo"),
-                    "subcategoria": get_val("Subcategoría")
-                },
-                "tipo_aislamiento": {
-                    "nombre": get_val("Aislamiento (Nombre)"),
-                    "color_cartel": get_val("Aislamiento (Color)"),
-                    "descripcion_al_clic": get_val("Aislamiento (Descripción)"),
-                    "advertencias_criticas": [a.strip() for a in get_val("Advertencias Críticas").split("|") if a.strip()]
-                },
-                "epp_requerido": [e.strip() for e in get_val("EPP Requerido").split("|") if e.strip()],
-                "mecanismos_infeccion": [m.strip() for m in get_val("Mecanismos Infección").split("|") if m.strip()],
-                "mecanismos_resistencia": [m.strip() for m in get_val("Mecanismos Resistencia").split("|") if m.strip()],
-                "disposicion_sala": get_val("Disposición Sala"),
-                "manejo_residuos_ropa": {
-                    "basura": get_val("Manejo Residuos")
-                },
-                "instrucciones_familia": get_val("Instrucciones Familia")
-            }
-
-            # Upsert (Actualizar si existe, insertar si no)
-            resultado = coleccion_patogenos.update_one(
-                {"nombre_cientifico": nombre_cientifico},
-                {"$set": patogeno_data},
-                upsert=True
-            )
-            
-            patogenos_procesados += 1
-            if resultado.upserted_id:
-                patogenos_nuevos += 1
-            else:
-                patogenos_actualizados += 1
-
-        return jsonify({
-            "success": True, 
-            "message": f"Excel procesado. Nuevos: {patogenos_nuevos}, Actualizados: {patogenos_actualizados}."
-        })
-
-    except Exception as e:
-        return jsonify({"success": False, "message": f"Error procesando Excel: {str(e)}"}), 500
 
 
 # Punto de inicio
