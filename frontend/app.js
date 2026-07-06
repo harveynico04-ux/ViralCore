@@ -401,6 +401,8 @@ function clearSearch(ctx) {
     }
 }
 
+let failedSearchTimeout = null;
+
 function renderMedResults(data, q = '') {
     const list  = qs('#med-results');
     const empty = qs('#med-empty');
@@ -414,15 +416,19 @@ function renderMedResults(data, q = '') {
                 <div style="font-size:1.2rem; font-weight:bold; color:var(--primary); margin-top:0.5rem; letter-spacing:1px;">(xxx) xxxxx xxxxx</div>
             </div>
         `;
+        clearTimeout(failedSearchTimeout);
         if (q) {
-            fetch(`${API}/busquedas-fallidas`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ termino: q })
-            }).catch(console.error);
+            failedSearchTimeout = setTimeout(() => {
+                fetch(`${API}/busquedas-fallidas`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ termino: q })
+                }).catch(console.error);
+            }, 1500);
         }
         return; 
     }
+    clearTimeout(failedSearchTimeout);
     show(list); hide(empty);
     list.innerHTML = data.map((item, i) => {
         const color = getColor(item.tipo_aislamiento?.color_cartel);
@@ -437,10 +443,27 @@ function renderMedResults(data, q = '') {
     }).join('');
 }
 
+let pendingMedId = null;
+
 function openMedDetail(id) {
-    if (!confirm("ADVERTENCIA: La información a continuación es técnica para profesionales de la salud. Su lectura sin conocimientos médicos puede producir malentendidos. ¿Desea continuar?")) {
-        return;
+    pendingMedId = id;
+    show(qs('#modal-warning'));
+}
+
+function closeWarningModal() {
+    hide(qs('#modal-warning'));
+    pendingMedId = null;
+}
+
+function confirmWarningModal() {
+    hide(qs('#modal-warning'));
+    if (pendingMedId) {
+        loadMedDetail(pendingMedId);
+        pendingMedId = null;
     }
+}
+
+function loadMedDetail(id) {
     const item = allPathogens.find(p => p._id === id);
     if (!item) return;
     currentPathogen = item;

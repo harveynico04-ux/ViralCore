@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="ViralCore - Control de Infecciones para profesionales de la salud">
     <title>ViralCore</title>
-    <link rel="stylesheet" href="styles.css?v=1.1">
+    <link rel="stylesheet" href="styles.css?v=1.2">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- QR Code generator -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -342,6 +342,21 @@
     </div>
 </div>
 
-<script src="app.js?v=1.1"></script>
+<!-- Modal Warning -->
+<div id="modal-warning" class="qr-overlay hidden" style="z-index:9999;">
+    <div class="qr-card" style="text-align:center; padding: 2rem; max-width: 400px;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+        <h3 style="color:var(--text-1); margin:0 0 1rem 0; font-size:1.2rem; font-weight:800;">Atención</h3>
+        <p style="color:var(--text-2); font-size:0.9rem; line-height:1.5; margin-bottom:1.5rem;">
+            La información a continuación es técnica para profesionales de la salud. Su lectura sin conocimientos médicos puede producir malentendidos.
+        </p>
+        <div style="display:flex; gap:1rem; justify-content:center;">
+            <button class="btn-qr-secondary" onclick="closeWarningModal()" style="flex:1;">Cancelar</button>
+            <button class="btn-primary" onclick="confirmWarningModal()" style="flex:1; margin:0;">Continuar</button>
+        </div>
+    </div>
+</div>
+
+<script src="app.js?v=1.2"></script>
 </body>
 </html>
