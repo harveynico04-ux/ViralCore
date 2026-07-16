@@ -360,9 +360,8 @@ function renderMedFiltered(q) {
         });
     }
     renderMedResults(data, q);
-    // Mostrar/ocultar hint
+    // Ocultar hint
     hide(qs('#med-hint'));
-    show(qs('#med-results'));
 }
 
 // ════════════════════════════════════════════
