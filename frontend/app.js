@@ -379,11 +379,11 @@ function resetMed() {
     fetchAndRender('medical', ''); // Cargar todos por defecto
 }
 
-qs('#search-med').addEventListener('input', debounce(e => {
+qs('#search-med').addEventListener('input', e => {
     const q = e.target.value.trim();
     q ? show(qs('#clear-med')) : hide(qs('#clear-med'));
     renderMedFiltered(q);
-}, 280));
+});
 
 function clearSearch(ctx) {
     qs(`#search-${ctx}`).value = '';
@@ -1072,7 +1072,7 @@ function initTriaje() {
                 <div style="display:flex; flex-direction:column; gap:1.25rem;">
 
                     <div style="display:flex; flex-direction:column; gap:0.5rem;">
-                        <span style="font-size:0.9rem; font-weight:700; color:var(--text-1);">\u00bfTiene diarrea aguda o incontinencia sin causa conocida?</span>
+                        <span style="font-size:0.9rem; font-weight:700; color:var(--text-1);">¿Tiene diarrea (3 o más deposiciones líquidas en las últimas 24 horas) o pérdida del control de las deposiciones sin una causa conocida?</span>
                         <div style="display:flex; gap:0.75rem;">
                             <label style="flex:1; display:flex; align-items:center; gap:0.5rem; background:var(--bg); border:1.5px solid var(--border); padding:0.6rem 1rem; border-radius:var(--r-md); cursor:pointer;">
                                 <input type="radio" name="q-diarrea" value="si" style="transform:scale(1.2);"><span>Sí</span>
@@ -1084,7 +1084,7 @@ function initTriaje() {
                     </div>
 
                     <div style="display:flex; flex-direction:column; gap:0.5rem;">
-                        <span style="font-size:0.9rem; font-weight:700; color:var(--text-1);">\u00bfSe sospecha Tuberculosis o tos productiva hem\u00f3ptica de m\u00e1s de 15 d\u00edas?</span>
+                        <span style="font-size:0.9rem; font-weight:700; color:var(--text-1);">¿Al toser elimina sangre o flemas con sangre?</span>
                         <div style="display:flex; gap:0.75rem;">
                             <label style="flex:1; display:flex; align-items:center; gap:0.5rem; background:var(--bg); border:1.5px solid var(--border); padding:0.6rem 1rem; border-radius:var(--r-md); cursor:pointer;">
                                 <input type="radio" name="q-tb" value="si" style="transform:scale(1.2);"><span>Sí</span>
@@ -1096,7 +1096,7 @@ function initTriaje() {
                     </div>
 
                     <div style="display:flex; flex-direction:column; gap:0.5rem;">
-                        <span style="font-size:0.9rem; font-weight:700; color:var(--text-1);">\u00bfTiene s\u00edntomas de Influenza (fiebre alta, tos, mialgias en época invernal)?</span>
+                        <span style="font-size:0.9rem; font-weight:700; color:var(--text-1);">¿Tiene fiebre acompañada de tos, dolor de garganta, congestión nasal o dolores musculares?</span>
                         <div style="display:flex; gap:0.75rem;">
                             <label style="flex:1; display:flex; align-items:center; gap:0.5rem; background:var(--bg); border:1.5px solid var(--border); padding:0.6rem 1rem; border-radius:var(--r-md); cursor:pointer;">
                                 <input type="radio" name="q-flu" value="si" style="transform:scale(1.2);"><span>Sí</span>
@@ -1108,7 +1108,7 @@ function initTriaje() {
                     </div>
 
                     <div style="display:flex; flex-direction:column; gap:0.5rem;">
-                        <span style="font-size:0.9rem; font-weight:700; color:var(--text-1);">\u00bfTiene herida infectada con drenaje abundante que no puede contenerse con apósito?</span>
+                        <span style="font-size:0.9rem; font-weight:700; color:var(--text-1);">¿Tiene una herida que elimina abundante pus o líquido y que no puede mantenerse cubierta con un apósito?</span>
                         <div style="display:flex; gap:0.75rem;">
                             <label style="flex:1; display:flex; align-items:center; gap:0.5rem; background:var(--bg); border:1.5px solid var(--border); padding:0.6rem 1rem; border-radius:var(--r-md); cursor:pointer;">
                                 <input type="radio" name="q-herida" value="si" style="transform:scale(1.2);"><span>Sí</span>
@@ -1302,47 +1302,18 @@ function renderCartelPreview(id) {
 
 
 
-// ════════════════════════════════════════════
-//  SUBIDA DE PDF PROTOCOLOS
-// ════════════════════════════════════════════
-async function uploadLocalProtocol() {
-    const fileInput = qs('#admin-pdf-upload');
-    const status = qs('#pdf-upload-status');
-    const file = fileInput.files[0];
-
-    if (!file) {
-        status.style.display = 'block';
-        status.style.color = 'red';
-        status.textContent = 'Seleccioná un archivo PDF primero.';
-        return;
-    }
-
-    status.style.display = 'block';
-    status.style.color = 'var(--text-2)';
-    status.textContent = 'Procesando PDF con IA. Esto puede tardar varios segundos...';
-
-    const formData = new FormData();
-    formData.append('file', file);
-
+async function clearFailedSearches() {
+    if (!confirm('¿Estás seguro de que quieres limpiar todas las búsquedas fallidas?')) return;
     try {
-        const res = await fetch(`${API}/upload-pdf`, {
-            method: 'POST',
-            body: formData
-        });
+        const res = await fetch(`${API}/busquedas-fallidas`, { method: 'DELETE' });
         const data = await res.json();
-
         if (data.success) {
-            status.style.color = 'green';
-            status.textContent = data.message;
-            // Refrescar lista de patógenos para aplicar las alertas locales
-            fetchAndRender('admin');
+            loadFailedSearches();
         } else {
-            status.style.color = 'red';
-            status.textContent = data.message;
+            alert('Error al limpiar las búsquedas.');
         }
     } catch (e) {
-        status.style.color = 'red';
-        status.textContent = 'Error de conexión al subir el PDF.';
+        alert('Error de conexión.');
     }
 }
 

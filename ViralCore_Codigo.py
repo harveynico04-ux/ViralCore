@@ -136,84 +136,13 @@ def obtener_busquedas_fallidas():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
-# 7. Procesar PDF de Protocolos Locales (Solo Admin)
-@app.route('/api/upload-pdf', methods=['POST'])
-def upload_pdf():
+@app.route('/api/busquedas-fallidas', methods=['DELETE'])
+def limpiar_busquedas_fallidas():
     try:
-        if 'file' not in request.files:
-            return jsonify({"success": False, "message": "No se envió ningún archivo PDF."}), 400
-
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({"success": False, "message": "Nombre de archivo vacío."}), 400
-
-        if not groq_client:
-            return jsonify({"success": False, "message": "Error: La API Key de Groq no está configurada."}), 500
-
-        # Extraer texto del PDF
-        pdf_text = ""
-        with pdfplumber.open(file) as pdf:
-            for page in pdf.pages:
-                text = page.extract_text()
-                if text:
-                    pdf_text += text + "\n"
-
-        if not pdf_text.strip():
-            return jsonify({"success": False, "message": "No se pudo extraer texto del PDF. Asegurate de que no sea un PDF escaneado."}), 400
-
-        system_msg = "Eres un analista experto en protocolos hospitalarios de control de infecciones. Tu única tarea es analizar documentos y devolver JSON puro sin texto adicional."
-
-        user_msg = (
-            f"Analiza el siguiente texto extraído de un manual de protocolos hospitalarios:\n\n{pdf_text[:12000]}\n\n"
-            "Extraé ÚNICAMENTE las reglas específicas, recomendaciones locales o normativas particulares para distintos microorganismos "
-            "(ej: MRSA, KPC, Clostridium difficile, Tuberculosis, Influenza, etc.).\n\n"
-            "Devolvé SOLO un JSON válido. El formato debe ser un diccionario donde la clave es el nombre del microorganismo "
-            "en minúsculas y el valor es una lista de strings con las alertas.\n"
-            'Ejemplo: {"staphylococcus aureus": ["Usar triple guante para MRSA"], "mycobacterium tuberculosis": ["Presión negativa obligatoria"]}'
-        )
-
-        completion = groq_client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": system_msg},
-                {"role": "user", "content": user_msg}
-            ],
-            temperature=0.0,
-            max_tokens=2000
-        )
-
-        respuesta_texto = completion.choices[0].message.content.strip()
-        # Limpiar posible formato Markdown del output
-        if respuesta_texto.startswith("```"):
-            respuesta_texto = respuesta_texto.split("```")[1]
-            if respuesta_texto.startswith("json"):
-                respuesta_texto = respuesta_texto[4:]
-        respuesta_texto = respuesta_texto.strip()
-
-        alertas = json.loads(respuesta_texto)
-
-        # Actualizar los patógenos en MongoDB con las alertas locales
-        patogenos_modificados = 0
-        for nombre_patogeno, lista_alertas in alertas.items():
-            resultado = coleccion_patogenos.update_many(
-                {"nombre_cientifico": {"$regex": nombre_patogeno, "$options": "i"}},
-                {"$set": {"alertas_locales": lista_alertas}}
-            )
-            patogenos_modificados += resultado.modified_count
-
-        return jsonify({
-            "success": True,
-            "message": f"PDF procesado correctamente. Se actualizaron {patogenos_modificados} patógenos con normativa local.",
-            "alertas": alertas
-        })
-
-    except json.JSONDecodeError as e:
-        return jsonify({"success": False, "message": f"La IA no devolvió JSON válido. Intentá con otro PDF."}), 500
+        coleccion_busquedas_fallidas.delete_many({})
+        return jsonify({"success": True}), 200
     except Exception as e:
-        return jsonify({"success": False, "message": f"Error procesando PDF: {str(e)}"}), 500
-
-
-
+        return jsonify({"success": False, "message": str(e)}), 500
 
 # Punto de inicio
 if __name__ == '__main__':
