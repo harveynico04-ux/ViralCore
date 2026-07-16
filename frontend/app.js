@@ -266,6 +266,7 @@ function goTo(view) {
         qs('header.app-bar').classList.remove('bar-hidden');
         setAppBar('Panel de Control', true);
         fetchAndRender('admin');
+        loadAuditHistory();
         buildEppChecklist([]);
     }
 }
@@ -440,7 +441,13 @@ function renderMedResults(data, q = '') {
             </div>
             <span class="rc-arrow">›</span>
         </div>`;
-    }).join('');
+    }).join('') + `
+        <div style="text-align:center; padding: 1.5rem 1rem; margin-top: 1rem; border-top: 1px solid var(--border);">
+            <p style="color:var(--text-3); font-size:0.85rem; margin-bottom:0.5rem;">¿Dudas sobre estos patógenos?</p>
+            <p style="color:var(--text-2); font-size:0.8rem; margin-bottom:0.25rem;">Comunícate con el especialista en infecciones:</p>
+            <div style="font-size:1.1rem; font-weight:bold; color:var(--primary); letter-spacing:1px;">(xxx) xxxxx xxxxx</div>
+        </div>
+    `;
 }
 
 let pendingMedId = null;
@@ -923,8 +930,10 @@ async function deletePathogen(id) {
     if (!confirm('¿Eliminar este patógeno de la base de datos?')) return;
     try {
         const res = await fetch(`${API}/patogenos/${id}`, { method: 'DELETE' });
-        if (res.ok) fetchAndRender('admin', qs('#search-admin').value);
-        else alert('Error al eliminar.');
+        if (res.ok) {
+            fetchAndRender('admin', qs('#search-admin').value);
+            loadAuditHistory();
+        } else alert('Error al eliminar.');
     } catch (e) { alert('Error de conexión.'); }
 }
 
@@ -1045,6 +1054,7 @@ async function savePathogen() {
         if (res.ok) {
             closeFormModal();
             fetchAndRender('admin', qs('#search-admin').value);
+            loadAuditHistory();
         } else {
             const errData = await res.json().catch(() => ({}));
             console.error('[save] error response:', errData);
@@ -1336,6 +1346,35 @@ async function loadFailedSearches() {
         }
     } catch (e) {
         list.innerHTML = '<span style="color:red">Error al cargar.</span>';
+    }
+}
+
+async function loadAuditHistory() {
+    const list = qs('#audit-history-list');
+    if (!list) return;
+    list.innerHTML = 'Cargando historial...';
+    try {
+        const res = await fetch(`${API}/historial`);
+        const data = await res.json();
+        if (data.success && data.historial.length > 0) {
+            list.innerHTML = data.historial.map(h => {
+                const date = new Date(h.fecha).toLocaleString();
+                let actionColor = 'var(--text-2)';
+                if (h.accion === 'CREADO') actionColor = 'green';
+                if (h.accion === 'ELIMINADO') actionColor = 'red';
+                if (h.accion === 'EDITADO') actionColor = '#d97706';
+                
+                return `<div style="border-bottom:1px solid var(--border); padding:0.4rem 0;">
+                    <span style="font-weight:700; font-size:0.75rem; color:${actionColor}; margin-right:0.5rem;">[${h.accion}]</span>
+                    <span style="font-weight:600; color:var(--text-1);">${h.patogeno}</span>
+                    <span style="color:var(--text-3); font-size:0.7rem; float:right;">${date}</span>
+                </div>`;
+            }).join('');
+        } else {
+            list.innerHTML = '<span style="color:var(--text-3)">No hay registros en el historial.</span>';
+        }
+    } catch (e) {
+        list.innerHTML = '<span style="color:red">Error al cargar historial.</span>';
     }
 }
 

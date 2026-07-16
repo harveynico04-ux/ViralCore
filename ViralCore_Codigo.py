@@ -9,6 +9,7 @@ from openai import OpenAI
 import pdfplumber
 import json
 import openpyxl
+from datetime import datetime
 
 # Cargar variables de entorno
 load_dotenv()
@@ -47,6 +48,7 @@ except Exception as e:
 db = cliente['ViraCore_Infecciones']
 coleccion_patogenos = db['patogenos']
 coleccion_busquedas_fallidas = db['busquedas_fallidas']
+coleccion_auditoria = db['auditoria']
 
 # --- RUTAS DE LA API ---
 
@@ -83,14 +85,19 @@ def agregar_patogeno():
     nuevo_patogeno = request.json
     resultado = coleccion_patogenos.insert_one(nuevo_patogeno)
     nuevo_patogeno['_id'] = str(resultado.inserted_id)
+    coleccion_auditoria.insert_one({"accion": "CREADO", "patogeno": nuevo_patogeno.get("nombre_cientifico", "Desconocido"), "fecha": datetime.utcnow()})
     return jsonify({"success": True, "data": nuevo_patogeno}), 201
 
 # 4. Eliminar un patógeno (Solo Admin)
 @app.route('/api/patogenos/<id_patogeno>', methods=['DELETE'])
 def eliminar_patogeno(id_patogeno):
     try:
+        patogeno = coleccion_patogenos.find_one({"_id": ObjectId(id_patogeno)})
+        if not patogeno:
+            return jsonify({"success": False, "message": "Patógeno no encontrado"}), 404
         resultado = coleccion_patogenos.delete_one({"_id": ObjectId(id_patogeno)})
         if resultado.deleted_count == 1:
+            coleccion_auditoria.insert_one({"accion": "ELIMINADO", "patogeno": patogeno.get("nombre_cientifico", "Desconocido"), "fecha": datetime.utcnow()})
             return jsonify({"success": True, "message": "Patógeno eliminado"}), 200
         else:
             return jsonify({"success": False, "message": "Patógeno no encontrado"}), 404
@@ -108,6 +115,8 @@ def editar_patogeno(id_patogeno):
             {"$set": datos}
         )
         if resultado.matched_count == 1:
+            patogeno_actual = coleccion_patogenos.find_one({"_id": ObjectId(id_patogeno)})
+            coleccion_auditoria.insert_one({"accion": "EDITADO", "patogeno": patogeno_actual.get("nombre_cientifico", "Desconocido") if patogeno_actual else "Desconocido", "fecha": datetime.utcnow()})
             return jsonify({"success": True}), 200
         else:
             return jsonify({"success": False, "message": "No encontrado"}), 404
@@ -121,7 +130,6 @@ def registrar_busqueda_fallida():
     termino = datos.get('termino', '').strip()
     if not termino:
         return jsonify({"success": False}), 400
-    from datetime import datetime
     coleccion_busquedas_fallidas.insert_one({
         "termino": termino,
         "fecha": datetime.utcnow()
@@ -141,6 +149,14 @@ def limpiar_busquedas_fallidas():
     try:
         coleccion_busquedas_fallidas.delete_many({})
         return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@app.route('/api/historial', methods=['GET'])
+def obtener_historial():
+    try:
+        historial = list(coleccion_auditoria.find({}, {"_id": 0}).sort("fecha", -1).limit(50))
+        return jsonify({"success": True, "historial": historial}), 200
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
