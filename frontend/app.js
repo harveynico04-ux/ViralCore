@@ -1303,7 +1303,6 @@ function renderCartelPreview(id) {
 
 
 async function clearFailedSearches() {
-    if (!confirm('¿Estás seguro de que quieres limpiar todas las búsquedas fallidas?')) return;
     try {
         const res = await fetch(`${API}/busquedas-fallidas`, { method: 'DELETE' });
         const data = await res.json();
